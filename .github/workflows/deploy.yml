@@ -84,6 +84,17 @@ jobs:
     - name: Clone the repo
       uses: "actions/checkout@v4"
 
+
+    - name: Copy compose.yaml to server
+      uses: appleboy/scp-action@v1
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_SSH_KEY }}
+        port: 22
+        source: 'compose.yaml'    # must exist in repo root
+        target: '/home/ubuntu'
+
     - name: Update new Compose file
       uses: appleboy/ssh-action@v1
       with:
@@ -101,15 +112,6 @@ jobs:
           docker compose -f ~/compose.yaml down
           docker compose -f ~/compose.yaml up -d
 
-    - name: Copy compose.yaml to server
-      uses: appleboy/scp-action@v1
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_SSH_KEY }}
-        port: 22
-        source: 'compose.yaml'    # must exist in repo root
-        target: '/home/ubuntu'
 
     - name: Update new Compose file
       uses: "appleboy/ssh-action@v1"
