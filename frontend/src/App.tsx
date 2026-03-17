@@ -27,6 +27,9 @@ function App() {
 
   return (
     <div className="app">
+      <header className="header">
+        <h1>Product Manager</h1>
+      </header>
 
       <main className="main-content">
         <div className="container">
