@@ -72,7 +72,7 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ steps.github-sha }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ env.github-sha }}
 
   
   Deploy:
@@ -92,7 +92,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.PRIVATE_SSH_KEY }}
         port: 22
-        source: compose.yaml
-        target: .
+        source: ./compose.yaml
+        target: ~/
         script: |
-          ls /
+          ls -l ~/
