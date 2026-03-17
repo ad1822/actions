@@ -40,7 +40,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ steps.github-sha.outputs.github-sha }}
           build-args: |
-            VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
