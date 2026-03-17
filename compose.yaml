@@ -20,7 +20,7 @@ services:
       - actions
 
   frontend:
-    image: ayushdumasia/product-frontend:3847
+    image: product-frontend:latest
     build:
      context: ./frontend
      args:
