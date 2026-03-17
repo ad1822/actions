@@ -90,5 +90,3 @@ jobs:
         port: 22
         source: 'compose.yaml'
         target: /home/ubuntu
-        script: |
-          ls -l ~/
