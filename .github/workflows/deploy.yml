@@ -55,6 +55,14 @@ jobs:
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
+      - name: Docker image scanning 
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE_NAME }}
+          format: table
+          exit-code: 1
+          severity: LOW,CRITICAL,HIGH
+
   Backend_Build_Image:
     runs-on: ubuntu-24.04
     # defaults:
