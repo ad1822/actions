@@ -106,6 +106,7 @@ jobs:
     needs:
       - Frontend_Build_Image
       - Backend_Build_Image
+
     # env:
     #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
 
@@ -132,11 +133,11 @@ jobs:
         key: ${{ secrets.PRIVATE_SSH_KEY }}
         port: 22
         script: |
-          docker pull ${{ env.FRONTEND_IMAGE_NAME }}
-          docker pull ${{ env.BACKEND_IMAGE_NAME }}
+          docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
+          docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
     
-          sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
-          sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
+        # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
+        # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
     
     - name: Update new Compose file
       uses: "appleboy/ssh-action@v1"
@@ -160,8 +161,8 @@ jobs:
           HOST=${{ secrets.HOST }}
           EOF
 
-            docker pull ${{ env.FRONTEND_IMAGE_NAME }}
-            docker pull ${{ env.BACKEND_IMAGE_NAME }}
+            docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
+            docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
     
             docker compose down
             docker compose up -d

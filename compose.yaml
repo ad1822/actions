@@ -2,7 +2,7 @@ name: "Action"
 
 services:
   backend:
-    image: product-backend:latest
+    image: ayushdumsia/product-backend:latest
     # build: ./backend/
     depends_on:
       database:
@@ -20,7 +20,7 @@ services:
       - actions
 
   frontend:
-    image: product-frontend:latest
+    image: ayushdumsia/product-frontend:latest
     build:
      context: ./frontend
      args:
