@@ -81,6 +81,9 @@ jobs:
       github-sha: ${{ needs.Frontend_Build_Image.outputs.github-sha }}
 
     steps:
+    - name: Clone the repo
+      uses: "action/checkout@v4"
+
     - name: Copy compose.yaml to server
       uses: appleboy/scp-action@v1
       with:
