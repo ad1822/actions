@@ -82,13 +82,13 @@ jobs:
 
     steps:
     - name: "Execute to SSH login"
-      uses: "appleboy/ssh-action@v1"
+      uses: "appleboy/scp-action@v1"
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.PRIVATE_SSH_KEY }}
         port: 22
-        source: ./compose.yaml
-        target: ~/
+        source: 'compose.yaml'
+        target: /home/ubuntu
         script: |
           ls -l ~/
