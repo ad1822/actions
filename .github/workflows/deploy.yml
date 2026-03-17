@@ -9,9 +9,9 @@ on:
 jobs:
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: ./frontend
+    # defaults:
+    #   run:
+    #     working-directory: ./frontend
     environment: production
     outputs:
       github-sha: ${{ steps.github-sha.outputs.github-sha }}
@@ -36,7 +36,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./frontend
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ steps.github-sha }}
 
