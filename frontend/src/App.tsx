@@ -27,12 +27,6 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div className="header-content">
-          <h1>📦 Product Manager</h1>
-          <p>Manage and organize your product catalog</p>
-        </div>
-      </header>
 
       <main className="main-content">
         <div className="container">
