@@ -42,9 +42,9 @@ jobs:
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: ./backend
+    # defaults:
+    #   run:
+    #     working-directory: ./backend
     needs: Frontend_Build_Image
     env:
       github-sha: ${{ needs.Frontend_Build_Image.outputs.github-sha }}
@@ -70,7 +70,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./backend
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ steps.github-sha }}
 
