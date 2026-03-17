@@ -1,0 +1,57 @@
+name: "Action"
+
+services:
+  backend:
+    image: product-backend:latest
+    # build: ./backend/
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "4344:8080"
+    environment:
+      - PORT=${PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - actions
+
+  frontend:
+    image: product-frontend:latest
+    build:
+     context: ./frontend
+     args:
+      - VITE_BASE_URL=${VITE_BASE_URL}
+    depends_on:
+    - backend
+    ports:
+      - "4343:80"
+    networks:
+      - actions
+
+  database:
+    image: postgres:15.17-trixie
+    container_name: database
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    shm_size: 128mb
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d ${DB_NAME} -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - actions
+
+networks:
+  actions: {}
+
+volumes:
+  postgresql_volume:
