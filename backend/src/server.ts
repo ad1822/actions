@@ -1,8 +1,8 @@
-import express, { Request, Response, NextFunction } from "express";
-import cors from "cors";
-import productsRoute from "./routes/products";
-import { initializeDatabase } from "./data/migration";
-import { closePool } from "./data/db";
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import productsRoute from './routes/products';
+import { initializeDatabase } from './data/migration';
+import { closePool } from './data/db';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -23,10 +23,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(cors());
 app.use(express.json());
 
-app.use("/products", productsRoute);
+app.use('/products', productsRoute);
 
-app.get("/", (req, res) => {
-  res.send("API running");
+app.get('/', (req, res) => {
+  res.send('API running');
 });
 
 const PORT = process.env.PORT;

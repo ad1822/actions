@@ -5,6 +5,9 @@ on:
     branches: 
       dev
 
+env:
+  FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+  BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
 jobs:
   # Generate_Github_SHA:
@@ -48,7 +51,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ env.FRONTEND_IMAGE_NAME }}
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
@@ -81,14 +84,13 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ env.BACKEND_IMAGE_NAME }}
 
   
   Deploy:
     runs-on: ubuntu-24.04
     environment: production
     needs:
-      # - Generate_Github_SHA
       - Frontend_Build_Image
       - Backend_Build_Image
     # env:
@@ -117,11 +119,11 @@ jobs:
         key: ${{ secrets.PRIVATE_SSH_KEY }}
         port: 22
         script: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/product-frontend:${{ github.sha }}
-          docker pull ${{ secrets.DOCKER_USERNAME }}/product-backend:${{ github.sha }}
+          docker pull ${{ env.FRONTEND_IMAGE_NAME }}
+          docker pull ${{ env.BACKEND_IMAGE_NAME }}
     
-          sed -i "s|product-frontend:latest|${{ secrets.DOCKER_USERNAME }}/product-frontend:${{ github.sha }}|g" ~/compose.yaml
-          sed -i "s|product-backend:latest|${{ secrets.DOCKER_USERNAME }}/product-backend:${{ github.sha }}|g" ~/compose.yaml
+          sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
+          sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
     
     - name: Update new Compose file
       uses: "appleboy/ssh-action@v1"
@@ -145,8 +147,8 @@ jobs:
           HOST=${{ secrets.HOST }}
           EOF
 
-            docker pull product-frontend:${{ github.sha }}
-            docker pull product-backend:${{ github.sha }}
+            docker pull ${{ env.FRONTEND_IMAGE_NAME }}
+            docker pull ${{ env.BACKEND_IMAGE_NAME }}
     
             docker compose down
             docker compose up -d
