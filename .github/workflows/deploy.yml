@@ -109,8 +109,8 @@ jobs:
           sed -i "s|product-frontend:latest|${{ secrets.DOCKER_USERNAME }}/product-frontend:${{ env.github-sha }}|g" ~/compose.yaml
           sed -i "s|product-backend:latest|${{ secrets.DOCKER_USERNAME }}/product-backend:${{ env.github-sha }}|g" ~/compose.yaml
     
-          docker compose -f ~/compose.yaml down
-          docker compose -f ~/compose.yaml up -d
+          docker-compose -f ~/compose.yaml down
+          docker-compose -f ~/compose.yaml up -d
 
 
     - name: Update new Compose file
@@ -121,7 +121,22 @@ jobs:
         key: ${{ secrets.PRIVATE_SSH_KEY }}
         port: 22
         script: |
+          cat <<EOF > .env
+            PORT=${{ secrets.PORT }}
+    
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+    
+            VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+    
+            HOST=${{ secrets.HOST }}
+            EOF
+
           docker pull product-frontend:latest
           docker pull product-backend:latest
-          docker compose down
-          docker compose up
+    
+          docker-compose down
+          docker-compose up -d
