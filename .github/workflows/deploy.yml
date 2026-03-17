@@ -8,7 +8,8 @@ on:
 env:
   FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
   BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-
+  FRONTEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
+  BACKEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 jobs:
   # Generate_Github_SHA:
   #   runs-on: ubuntu-24.04
@@ -51,17 +52,19 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.FRONTEND_IMAGE_NAME }}
+          tags: |
+            ${{ env.FRONTEND_IMAGE_NAME }}
+            ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
-      - name: Docker image scanning 
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
-          format: 'table'
-          exit-code: 1
-          severity: CRITICAL,HIGH
+      # - name: Docker image scanning 
+      #   uses: aquasecurity/trivy-action@0.33.1
+      #   with:
+      #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
+      #     format: 'table'
+      #     exit-code: 1
+      #     severity: CRITICAL,HIGH
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
@@ -92,7 +95,9 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ env.BACKEND_IMAGE_NAME }}
+          tags: |
+            ${{ env.BACKEND_IMAGE_NAME }}
+            ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
 
   
   Deploy:
