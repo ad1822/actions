@@ -77,7 +77,7 @@ jobs:
   
   Deploy:
     runs-on: ubuntu-24.04
-    environment: prod
+    environment: production
     needs:
       - Frontend_Build_Image
       - Backend_Build_Image
