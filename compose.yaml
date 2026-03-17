@@ -8,7 +8,7 @@ services:
       database:
         condition: service_healthy
     ports:
-      - "4344:8080"
+      - "8080:8080"
     environment:
       - PORT=${PORT}
       - DB_HOST=${DB_HOST}
@@ -20,7 +20,7 @@ services:
       - actions
 
   frontend:
-    image: product-frontend:latest
+    image: ayushdumasia/product-frontend:3847
     build:
      context: ./frontend
      args:
@@ -28,7 +28,7 @@ services:
     depends_on:
     - backend
     ports:
-      - "4343:80"
+      - "80:80"
     networks:
       - actions
 
