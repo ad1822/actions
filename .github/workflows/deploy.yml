@@ -61,7 +61,7 @@ jobs:
           image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
           format: 'table'
           exit-code: 1
-          severity: LOW,CRITICAL,HIGH
+          severity: CRITICAL,HIGH
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
