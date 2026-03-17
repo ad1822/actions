@@ -7,22 +7,32 @@ on:
 
 
 jobs:
-  Frontend_Build_Image:
+  Generate_Github_SHA:
     runs-on: ubuntu-24.04
-    # defaults:
-    #   run:
-    #     working-directory: ./frontend
     outputs:
       github-sha: ${{ steps.github-sha.outputs.github-sha }}
-    environment: production
 
     steps:
-      - name: Checkout code
+      - name: Clone the repo
         uses: "actions/checkout@v4"
 
       - name: Generate a SHA for Docker tag
         id: github-sha
         run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  Frontend_Build_Image:
+    runs-on: ubuntu-24.04
+    needs: Generate_Github_SHA
+    env:
+      github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+    # defaults:
+    #   run:
+    #     working-directory: ./frontend
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
@@ -38,7 +48,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ steps.github-sha.outputs.github-sha }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ env.github-sha }}
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
@@ -47,9 +57,9 @@ jobs:
     # defaults:
     #   run:
     #     working-directory: ./backend
-    needs: Frontend_Build_Image
+    needs: Generate_Github_SHA
     env:
-      github-sha: ${{ needs.Frontend_Build_Image.outputs.github-sha }}
+      github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
     environment: production
 
     steps:
@@ -78,10 +88,11 @@ jobs:
     runs-on: ubuntu-24.04
     environment: production
     needs:
+      - Generate_Github_SHA
       - Frontend_Build_Image
       - Backend_Build_Image
     env:
-      github-sha: ${{ needs.Frontend_Build_Image.outputs.github-sha }}
+      github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
 
     steps:
     - name: Clone the repo
@@ -134,8 +145,8 @@ jobs:
           HOST=${{ secrets.HOST }}
           EOF
 
-            docker pull product-frontend:latest
-            docker pull product-backend:latest
+            docker pull product-frontend:${{ env.github-sha }}
+            docker pull product-backend:${{ env.github-sha }}
     
             docker compose down
             docker compose up -d
