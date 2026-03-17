@@ -118,21 +118,21 @@ jobs:
         port: 22
         script: |
           cat <<EOF > .env
-            PORT=${{ secrets.PORT }}
+          PORT=${{ secrets.PORT }}
     
-            DB_HOST=${{ secrets.DB_HOST }}
-            DB_PORT=${{ secrets.DB_PORT }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
     
-            VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+          VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
     
-            HOST=${{ secrets.HOST }}
-            EOF
+          HOST=${{ secrets.HOST }}
+          EOF
 
-          docker pull product-frontend:latest
-          docker pull product-backend:latest
+            docker pull product-frontend:latest
+            docker pull product-backend:latest
     
-          docker-compose down
-          docker-compose up -d
+            docker compose down
+            docker compose up -d
