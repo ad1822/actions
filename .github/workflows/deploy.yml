@@ -1,6 +1,6 @@
 name: Frontend-backend pipeline
 
-on: 
+on: []
   # push: 
   #   branches: 
   #     dev
