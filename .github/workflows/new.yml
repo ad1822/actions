@@ -13,17 +13,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - run: |
-          git remote add origin1 "https://github.com/ad1822/actions.git"
-          git config user.email "het.solanki721@gmail.com"
-          git config user.name "HetSolanki"
-          git switch -c het
+      - name: Make some changes (example: create/modify a file)
+        run: echo "New content" >> generated-file.txt
+        # Replace this step with your actual steps that modify files (e.g., build, lint, etc.)
 
-      - run: echo "hello world" > "newfile.txt"
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automated changes: update generated-file.txt" # Custom commit message
+          # Optional: configure the bot's identity
+          author_name: "github-actions[bot]"
+          author_email: "github-actions[bot]@users.noreply.github.com"
 
-      - run: |
-          git add .
-          git commit -am "fix: update"
-          git push origin1 het 
