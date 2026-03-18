@@ -1,13 +1,13 @@
 name: Frontend-backend pipeline
 
 on: 
-  push: 
-    branches: 
-      dev
-  pull_request:
-    branches:
-      dev
-
+  # push: 
+  #   branches: 
+  #     dev
+  # pull_request:
+  #   branches:
+  #     dev
+  #
 concurrency: 
   group: idk
   cancel-in-progress: true
