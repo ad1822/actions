@@ -36,7 +36,7 @@ jobs:
           git branch
           git add .
           git commit -m "new commit by het"
-          git push origin main
+          git push origin dev
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
