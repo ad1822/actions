@@ -174,7 +174,7 @@ jobs:
 
     steps:
       - name: Check system is up
-        run: ping ${{ secrets.HOST }}
+        run: ping ${{ secrets.HOST }} -c 10 
 
       - name: Check backend API
         run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
