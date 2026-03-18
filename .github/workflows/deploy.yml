@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
+          cache-dependency-path: ./frontend
 
       - name: Dependencies scanning
         run: "npm audit"
@@ -69,6 +70,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
+          cache-dependency-path: ./backend
 
       - name: Dependencies scanning
         run: "npm audit"
