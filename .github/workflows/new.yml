@@ -1,6 +1,6 @@
 name: Auto Commit
 
-on: push
+on: [push, pull_request]
 
 permissions:
   contents: write
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: echo "New content" >> generated-file.txt
+      - run: echo "New content" >> testing
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
