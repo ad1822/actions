@@ -168,7 +168,7 @@ jobs:
             docker compose up -d
 
   Smoke_Testing:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     environment: production
     needs: Deploy
 
