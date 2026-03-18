@@ -1,10 +1,13 @@
 name: Frontend-backend pipeline
 
-on: 
-  push: 
-    branches: 
-      dev
-
+on: []
+  # push: 
+  #   branches: 
+  #     dev
+  # pull_request:
+  #   branches:
+  #     dev
+  #
 concurrency: 
   group: idk
   cancel-in-progress: true
@@ -15,13 +18,8 @@ env:
   FRONTEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
   BACKEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 jobs:
-
-  Frontend_Build_Test:
-    runs-on: ubuntu-24.04
-    environment: production
-    defaults:
-      run:
-        working-directory: ./frontend
+  commit:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone the frontend repo 
@@ -109,11 +107,13 @@ jobs:
 
   # Generate_Github_SHA:
   #   runs-on: ubuntu-24.04
-  #   outputs:
-  #     github-sha: ${{ steps.github-sha.outputs.github-sha }}
+  #   environment: production
+  #   defaults:
+  #     run:
+  #       working-directory: ./frontend
   #
   #   steps:
-  #     - name: Clone the repo
+  #     - name: Clone the frontend repo 
   #       uses: "actions/checkout@v4"
   #
   #     - name: Generate a SHA for Docker tag
