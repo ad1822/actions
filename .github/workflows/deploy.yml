@@ -15,6 +15,25 @@ env:
   FRONTEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
   BACKEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 jobs:
+  commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone github repo
+        uses: actions/checkout@v4
+
+      - name: creates a new file
+        run: |
+          cat > file <<EOF
+            Hello
+            World
+            EOF
+
+      - name: commit a changes
+        run: |
+          git add .
+          git commit -m "new commit by het"
+          git push origin b1
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
