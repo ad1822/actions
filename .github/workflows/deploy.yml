@@ -57,7 +57,9 @@ jobs:
         uses: "actions/upload-artifact@v6" 
         with:
           name: frontend-dist
-          path: ./frontend/dist/
+          path: |
+            ./frontend/dist/
+            ./frontend/Dockerfile
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
