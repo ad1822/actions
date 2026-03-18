@@ -22,7 +22,7 @@ ARG VITE_BASE_URL
 
 ENV VITE_BASE_URL=$VITE_BASE_URL
 
-COPY /app/dist /usr/share/nginx/html/
+COPY /dist /usr/share/nginx/html/
 
 EXPOSE 80
 

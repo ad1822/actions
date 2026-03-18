@@ -57,7 +57,7 @@ jobs:
         uses: "actions/upload-artifact@v6" 
         with:
           name: frontend-dist
-          path: dist/
+          path: ./frontend/dist/
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
@@ -122,8 +122,9 @@ jobs:
     steps:
       # - name: Checkout code
       #   uses: "actions/checkout@v4"
+
       - name: Download the artifacts
-        uses: "actions/download-artifact@v4"
+        uses: "actions/download-artifact@v8"
         with:
           name: frontend-dist
           path: dist
