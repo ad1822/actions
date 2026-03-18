@@ -24,10 +24,10 @@ jobs:
 
       - name: creates a new file
         run: |
-          cat > file <<EOF
-            Hello
-            World
-            EOF
+          cat > file << EOF
+          Hello
+          World
+          EOF
 
       - name: commit a changes
         run: |
