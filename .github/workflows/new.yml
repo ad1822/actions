@@ -1,0 +1,26 @@
+name: cicd
+
+on:
+  push:
+    branches:
+      dev
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          git remote add origin1 "https://github.com/ad1822/actions.git"
+          git config user.email "het.solanki721@gmail.com"
+          git config user.name "HetSolanki"
+          git switch -c het
+
+      - run: echo "hello world" > "newfile.txt"
+
+      - run: |
+          git add .
+          git commit -am "fix: update"
+          git push origin1 het 
