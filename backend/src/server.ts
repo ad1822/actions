@@ -29,6 +29,10 @@ app.get('/', (req, res) => {
   res.send('API running');
 });
 
+app.get('/health', (req, res) => {
+  res.send(`backend is working file on ${PORT}`);
+});
+
 const PORT = process.env.PORT;
 
 const server = app.listen(PORT, async () => {
