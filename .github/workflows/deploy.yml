@@ -23,6 +23,14 @@ jobs:
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Dependencies scanning
+        run: "npm audit"
+
       - name: Install the dependencies
         run: "npm ci"
 
@@ -32,8 +40,19 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
+      - name: Check build output
+        run: ls -la dist
+
       - name: Check Unit Testing
         run: "npm run test || true"
+
+      - run: ls 
+
+      - name: Upload artifacts
+        uses: "actions/upload-artifact@v6" 
+        with:
+          name: frontend-dist
+          path: dist/
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
@@ -46,6 +65,14 @@ jobs:
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Dependencies scanning
+        run: "npm audit"
+
       - name: Install the dependencies
         run: "npm ci"
 
@@ -54,6 +81,9 @@ jobs:
 
       - name: Build the code
         run: "npm run build"
+
+      - name: Check build output
+        run: ls -la dist
 
       - name: Check Unit Testing
         run: "npm run test || true"
@@ -77,15 +107,21 @@ jobs:
 
     # env:
     #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-    # defaults:
-    #   run:
-    #     working-directory: ./frontend
+    defaults:
+      run:
+        working-directory: ./frontend
 
     environment: production
 
     steps:
-      - name: Checkout code
-        uses: "actions/checkout@v4"
+      # - name: Checkout code
+      #   uses: "actions/checkout@v4"
+
+      - name: Download the frontend artifact
+        uses: "actions/download-artifact@v8"
+        with:
+          name: frontend-dist
+          path: dist
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
@@ -107,22 +143,24 @@ jobs:
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
-      # - name: Docker image scanning 
-      #   uses: aquasecurity/trivy-action@0.33.1
-      #   with:
-      #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
-      #     format: 'table'
-      #     exit-code: 1
-      #     severity: CRITICAL,HIGH
+      - name: Docker image scanning 
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
+          format: 'table'
+          exit-code: 0
+          severity: CRITICAL,HIGH
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
+
     # defaults:
     #   run:
     #     working-directory: ./backend
     # needs: Generate_Github_SHA
     # env:
     #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+
     environment: production
     needs: Backend_Build_Test
 
@@ -149,6 +187,13 @@ jobs:
             ${{ env.BACKEND_IMAGE_NAME }}
             ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
 
+      - name: Docker image scanning 
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
+          format: 'table'
+          exit-code: 0
+          severity: CRITICAL,HIGH
   
   Deploy:
     runs-on: ubuntu-24.04
@@ -164,7 +209,6 @@ jobs:
     - name: Clone the repo
       uses: "actions/checkout@v4"
 
-
     - name: Copy compose.yaml to server
       uses: appleboy/scp-action@v1
       with:
@@ -175,16 +219,16 @@ jobs:
         source: 'compose.yaml'
         target: '/home/ubuntu'
 
-    - name: Update new Compose file
-      uses: appleboy/ssh-action@v1
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_SSH_KEY }}
-        port: 22
-        script: |
-          docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
-          docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
+    # - name: Update new Compose file
+    #   uses: appleboy/ssh-action@v1
+    #   with:
+    #     host: ${{ secrets.HOST }}
+    #     username: ${{ secrets.USERNAME }}
+    #     key: ${{ secrets.PRIVATE_SSH_KEY }}
+    #     port: 22
+    #     script: |
+    #       docker pull ${{ env.FRONTEND_IMAGE_NAME }}
+    #       docker pull ${{ env.BACKEND_IMAGE_NAME }}
     
         # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
         # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
@@ -215,7 +259,7 @@ jobs:
             docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
     
             docker compose down
-            docker compose up -d
+            docker compose up -d --remove-orphans
 
   Smoke_Testing:
     runs-on: self-hosted
