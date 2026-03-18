@@ -90,13 +90,13 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      - name: Upload artifacts
-        uses: "actions/upload-artifact@v6" 
-        with:
-          name: backend-build
-          path: |
-            ./backend/dist/
-            ./backend/Dockerfile
+      # - name: Upload artifacts
+      #   uses: "actions/upload-artifact@v6" 
+      #   with:
+      #     name: backend-build
+      #     path: |
+      #       ./backend/dist/
+      #       ./backend/Dockerfile
 
       - name: Check Unit Testing
         run: "npm run test || true"
@@ -178,14 +178,14 @@ jobs:
     needs: Backend_Build_Test
 
     steps:
-      # - name: Checkout code
-      #   uses: "actions/checkout@v4"
+      - name: Checkout code
+        uses: "actions/checkout@v4"
 
-      - name: Download the artifacts
-        uses: "actions/download-artifact@v8"
-        with:
-          name: backend-build
-          path: dist
+      # - name: Download the artifacts
+      #   uses: "actions/download-artifact@v8"
+      #   with:
+      #     name: backend-build
+      #     path: dist
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
@@ -200,7 +200,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: dist
+          context: 
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE_NAME }}
