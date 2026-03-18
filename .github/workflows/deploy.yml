@@ -141,7 +141,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./frontend
+          context: dist
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE_NAME }}
