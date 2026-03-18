@@ -16,8 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Make some changes (example: create/modify a file)
-        run: echo "New content" >> generated-file.txt
+      - run: echo "New content" >> generated-file.txt
         # Replace this step with your actual steps that modify files (e.g., build, lint, etc.)
 
       - name: Commit and push changes
