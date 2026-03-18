@@ -25,18 +25,15 @@ jobs:
       - name: Clone github repo
         uses: actions/checkout@v4
 
-      - name: creates a new file
-        run: |
-          cat > file << EOF
-          Hello
-          World
-          EOF
-
       - name: commit a changes
         run: |
           git config user.email "hetsolanki721@gmail.com"
           git config user.name "HetSolanki"
           git switch -c het
+          cat > file << EOF
+          Hello
+          World
+          EOF
           git branch
           git remote add origin1 https://github.com/ad1822/actions.git
           git add .
