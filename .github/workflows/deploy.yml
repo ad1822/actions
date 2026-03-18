@@ -5,6 +5,10 @@ on:
     branches: 
       dev
 
+concurrency: 
+  group: idk
+  cancel-in-progress: true
+
 env:
   FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
   BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
@@ -123,7 +127,7 @@ jobs:
         uses: "actions/download-artifact@v8"
         with:
           name: frontend-dist
-          path: dist
+          path: ./frontend/dist
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
