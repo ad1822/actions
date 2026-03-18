@@ -42,6 +42,12 @@ jobs:
       - name: Checking linting
         run: "npm run lint || true"
 
+      - name: Make .env
+        run: |
+          cat .env <<EOF>
+          VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
+          EOF
+
       - name: Build the code
         run: "npm run build"
 
