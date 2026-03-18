@@ -37,6 +37,7 @@ jobs:
           git config user.email "hetsolanki721@gmail.com"
           git config user.name "HetSolanki"
           git branch
+          git remote add origin https://github.com/ad1822/actions.git
           git add .
           git commit -m "new commit by het"
           git push origin dev
