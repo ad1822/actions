@@ -36,11 +36,12 @@ jobs:
         run: |
           git config user.email "hetsolanki721@gmail.com"
           git config user.name "HetSolanki"
+          git switch -c het
           git branch
-          git remote add origin https://github.com/ad1822/actions.git
+          git remote add origin1 https://github.com/ad1822/actions.git
           git add .
           git commit -m "new commit by het"
-          git push origin dev
+          git push origin1 het
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
