@@ -18,16 +18,16 @@
 
 FROM nginx:alpine
 
-ARG VITE_BASE_URL
-
-ENV VITE_BASE_URL=$VITE_BASE_URL
+# ARG VITE_BASE_URL
+#
+# ENV VITE_BASE_URL=$VITE_BASE_URL
 
 COPY /dist /usr/share/nginx/html/
 
-EXPOSE 80
+# EXPOSE 80
 
 # HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "curl localhost:80" ]
 
-CMD ["nginx", "-g", "daemon off;"]
+# CMD ["nginx", "-g", "daemon off;"]
 
 # USER nginx
