@@ -25,299 +25,298 @@ jobs:
       - name: Clone github repo
         uses: actions/checkout@v4
 
-      - name: creates a new file
-        run: |
-          cat > file << EOF
-          Hello
-          World
-          EOF
-
       - name: commit a changes
         run: |
           git config user.email "hetsolanki721@gmail.com"
           git config user.name "HetSolanki"
+          git switch -c het
+          # cat > file << EOF
+          # Hello
+          # World
+          # EOF
+          echo "myfile" >> file.txt
           git branch
-          git remote add origin https://github.com/ad1822/actions.git
+          git remote add origin1 https://github.com/ad1822/actions.git
           git add .
           git commit -m "new commit by het"
-          git push origin dev
+          git push origin1 het
 
-  Frontend_Build_Test:
-    runs-on: ubuntu-24.04
-    environment: production
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Clone the frontend repo 
-        uses: "actions/checkout@v4"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: ./frontend
-
-      - name: Dependencies scanning
-        run: "npm audit"
-
-      - name: Install the dependencies
-        run: "npm ci"
-
-      - name: Checking linting
-        run: "npm run lint || true"
-
-      - name: Build the code
-        run: "npm run build"
-
-      - name: Check build output
-        run: ls -la dist
-
-      - name: Check Unit Testing
-        run: "npm run test || true"
-
-      - run: ls 
-
-      - name: Upload artifacts
-        uses: "actions/upload-artifact@v6" 
-        with:
-          name: frontend-build
-          path: |
-            ./frontend/dist/
-            ./frontend/Dockerfile
-
-  Backend_Build_Test:
-    runs-on: ubuntu-24.04
-    environment: production
-    defaults:
-      run:
-        working-directory: ./backend
-
-    steps:
-      - name: Clone the frontend repo 
-        uses: "actions/checkout@v4"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: ./backend
-
-      - name: Dependencies scanning
-        run: "npm audit"
-
-      - name: Install the dependencies
-        run: "npm ci"
-
-      - name: Checking linting
-        run: "npm run lint || true"
-
-      - name: Build the code
-        run: "npm run build"
-
-      - name: Upload artifacts
-        uses: "actions/upload-artifact@v6" 
-        with:
-          name: backend-build
-          path: |
-            ./backend/dist/
-            ./backend/Dockerfile
-
-      - name: Check Unit Testing
-        run: "npm run test || true"
-
-  # Generate_Github_SHA:
+  # Frontend_Build_Test:
   #   runs-on: ubuntu-24.04
-  #   outputs:
-  #     github-sha: ${{ steps.github-sha.outputs.github-sha }}
+  #   environment: production
+  #   defaults:
+  #     run:
+  #       working-directory: ./frontend
   #
   #   steps:
-  #     - name: Clone the repo
+  #     - name: Clone the frontend repo 
   #       uses: "actions/checkout@v4"
   #
-  #     - name: Generate a SHA for Docker tag
-  #       id: github-sha
-  #       run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-  Frontend_Build_Image:
-    runs-on: ubuntu-24.04
-    needs: Frontend_Build_Test
-
-    # env:
-    #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    environment: production
-
-    steps:
-      # - name: Checkout code
-      #   uses: "actions/checkout@v4"
-
-      - name: Download the artifacts
-        uses: "actions/download-artifact@v8"
-        with:
-          name: frontend-build
-          path: dist
-
-      - name: Login in Docker
-        uses: "docker/login-action@v3"
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: "Build docker image"
-        uses: "docker/setup-buildx-action@v3"
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: dist
-          push: true
-          tags: |
-            ${{ env.FRONTEND_IMAGE_NAME }}
-            ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
-          build-args: |
-            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
-
-      # - name: Docker image scanning 
-      #   uses: aquasecurity/trivy-action@0.33.1
-      #   with:
-      #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
-      #     format: 'table'
-      #     exit-code: 0
-      #     severity: CRITICAL,HIGH
-
-  Backend_Build_Image:
-    runs-on: ubuntu-24.04
-
-    # defaults:
-    #   run:
-    #     working-directory: ./backend
-    # needs: Generate_Github_SHA
-    # env:
-    #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-
-    environment: production
-    needs: Backend_Build_Test
-
-    steps:
-      # - name: Checkout code
-      #   uses: "actions/checkout@v4"
-
-      - name: Download the artifacts
-        uses: "actions/download-artifact@v8"
-        with:
-          name: backend-build
-          path: dist
-
-      - name: Login in Docker
-        uses: "docker/login-action@v3"
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-
-      - name: "Build docker image"
-        uses: "docker/setup-buildx-action@v3"
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: dist
-          push: true
-          tags: |
-            ${{ env.BACKEND_IMAGE_NAME }}
-            ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
-
-      # - name: Docker image scanning 
-      #   uses: aquasecurity/trivy-action@0.33.1
-      #   with:
-      #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
-      #     format: 'table'
-      #     exit-code: 0
-      #     severity: CRITICAL,HIGH
-  
-  Deploy:
-    runs-on: ubuntu-24.04
-    environment: production
-    needs:
-      - Frontend_Build_Image
-      - Backend_Build_Image
-
-    # env:
-    #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-
-    steps:
-    - name: Clone the repo
-      uses: "actions/checkout@v4"
-
-    - name: Copy compose.yaml to server
-      uses: appleboy/scp-action@v1
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_SSH_KEY }}
-        port: 22
-        source: 'compose.yaml'
-        target: '/home/ubuntu'
-
-    # - name: Update new Compose file
-    #   uses: appleboy/ssh-action@v1
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     username: ${{ secrets.USERNAME }}
-    #     key: ${{ secrets.PRIVATE_SSH_KEY }}
-    #     port: 22
-    #     script: |
-    #       docker pull ${{ env.FRONTEND_IMAGE_NAME }}
-    #       docker pull ${{ env.BACKEND_IMAGE_NAME }}
-    
-        # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
-        # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
-    
-    - name: Update new Compose file
-      uses: "appleboy/ssh-action@v1"
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_SSH_KEY }}
-        port: 22
-        script: |
-          cat <<EOF > .env
-          PORT=${{ secrets.PORT }}
-    
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-    
-          VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
-    
-          HOST=${{ secrets.HOST }}
-          EOF
-
-            docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
-            docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
-    
-            docker compose down
-            docker compose up -d --remove-orphans
-
-  Smoke_Testing:
-    runs-on: self-hosted
-    environment: production
-    needs: Deploy
-
-    steps:
-      - name: Check system is up
-        run: ping ${{ secrets.HOST }} -c 10 || true
-
-      - name: Check backend API
-        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-
-      - name: Check frontend API
-        run: curl http://${{ secrets.HOST }}
-
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 24
+  #         cache: 'npm'
+  #         cache-dependency-path: ./frontend
+  #
+  #     - name: Dependencies scanning
+  #       run: "npm audit"
+  #
+  #     - name: Install the dependencies
+  #       run: "npm ci"
+  #
+  #     - name: Checking linting
+  #       run: "npm run lint || true"
+  #
+  #     - name: Build the code
+  #       run: "npm run build"
+  #
+  #     - name: Check build output
+  #       run: ls -la dist
+  #
+  #     - name: Check Unit Testing
+  #       run: "npm run test || true"
+  #
+  #     - run: ls 
+  #
+  #     - name: Upload artifacts
+  #       uses: "actions/upload-artifact@v6" 
+  #       with:
+  #         name: frontend-build
+  #         path: |
+  #           ./frontend/dist/
+  #           ./frontend/Dockerfile
+  #
+  # Backend_Build_Test:
+  #   runs-on: ubuntu-24.04
+  #   environment: production
+  #   defaults:
+  #     run:
+  #       working-directory: ./backend
+  #
+  #   steps:
+  #     - name: Clone the frontend repo 
+  #       uses: "actions/checkout@v4"
+  #
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 24
+  #         cache: 'npm'
+  #         cache-dependency-path: ./backend
+  #
+  #     - name: Dependencies scanning
+  #       run: "npm audit"
+  #
+  #     - name: Install the dependencies
+  #       run: "npm ci"
+  #
+  #     - name: Checking linting
+  #       run: "npm run lint || true"
+  #
+  #     - name: Build the code
+  #       run: "npm run build"
+  #
+  #     - name: Upload artifacts
+  #       uses: "actions/upload-artifact@v6" 
+  #       with:
+  #         name: backend-build
+  #         path: |
+  #           ./backend/dist/
+  #           ./backend/Dockerfile
+  #
+  #     - name: Check Unit Testing
+  #       run: "npm run test || true"
+  #
+  # # Generate_Github_SHA:
+  # #   runs-on: ubuntu-24.04
+  # #   outputs:
+  # #     github-sha: ${{ steps.github-sha.outputs.github-sha }}
+  # #
+  # #   steps:
+  # #     - name: Clone the repo
+  # #       uses: "actions/checkout@v4"
+  # #
+  # #     - name: Generate a SHA for Docker tag
+  # #       id: github-sha
+  # #       run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+  #
+  # Frontend_Build_Image:
+  #   runs-on: ubuntu-24.04
+  #   needs: Frontend_Build_Test
+  #
+  #   # env:
+  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+  #   defaults:
+  #     run:
+  #       working-directory: ./frontend
+  #
+  #   environment: production
+  #
+  #   steps:
+  #     # - name: Checkout code
+  #     #   uses: "actions/checkout@v4"
+  #
+  #     - name: Download the artifacts
+  #       uses: "actions/download-artifact@v8"
+  #       with:
+  #         name: frontend-build
+  #         path: dist
+  #
+  #     - name: Login in Docker
+  #       uses: "docker/login-action@v3"
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+  #
+  #     - name: "Build docker image"
+  #       uses: "docker/setup-buildx-action@v3"
+  #
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         context: dist
+  #         push: true
+  #         tags: |
+  #           ${{ env.FRONTEND_IMAGE_NAME }}
+  #           ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
+  #         build-args: |
+  #           VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
+  #
+  #     # - name: Docker image scanning 
+  #     #   uses: aquasecurity/trivy-action@0.33.1
+  #     #   with:
+  #     #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
+  #     #     format: 'table'
+  #     #     exit-code: 0
+  #     #     severity: CRITICAL,HIGH
+  #
+  # Backend_Build_Image:
+  #   runs-on: ubuntu-24.04
+  #
+  #   # defaults:
+  #   #   run:
+  #   #     working-directory: ./backend
+  #   # needs: Generate_Github_SHA
+  #   # env:
+  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+  #
+  #   environment: production
+  #   needs: Backend_Build_Test
+  #
+  #   steps:
+  #     # - name: Checkout code
+  #     #   uses: "actions/checkout@v4"
+  #
+  #     - name: Download the artifacts
+  #       uses: "actions/download-artifact@v8"
+  #       with:
+  #         name: backend-build
+  #         path: dist
+  #
+  #     - name: Login in Docker
+  #       uses: "docker/login-action@v3"
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+  #
+  #
+  #     - name: "Build docker image"
+  #       uses: "docker/setup-buildx-action@v3"
+  #
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         context: dist
+  #         push: true
+  #         tags: |
+  #           ${{ env.BACKEND_IMAGE_NAME }}
+  #           ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
+  #
+  #     # - name: Docker image scanning 
+  #     #   uses: aquasecurity/trivy-action@0.33.1
+  #     #   with:
+  #     #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
+  #     #     format: 'table'
+  #     #     exit-code: 0
+  #     #     severity: CRITICAL,HIGH
+  #
+  # Deploy:
+  #   runs-on: ubuntu-24.04
+  #   environment: production
+  #   needs:
+  #     - Frontend_Build_Image
+  #     - Backend_Build_Image
+  #
+  #   # env:
+  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+  #
+  #   steps:
+  #   - name: Clone the repo
+  #     uses: "actions/checkout@v4"
+  #
+  #   - name: Copy compose.yaml to server
+  #     uses: appleboy/scp-action@v1
+  #     with:
+  #       host: ${{ secrets.HOST }}
+  #       username: ${{ secrets.USERNAME }}
+  #       key: ${{ secrets.PRIVATE_SSH_KEY }}
+  #       port: 22
+  #       source: 'compose.yaml'
+  #       target: '/home/ubuntu'
+  #
+  #   # - name: Update new Compose file
+  #   #   uses: appleboy/ssh-action@v1
+  #   #   with:
+  #   #     host: ${{ secrets.HOST }}
+  #   #     username: ${{ secrets.USERNAME }}
+  #   #     key: ${{ secrets.PRIVATE_SSH_KEY }}
+  #   #     port: 22
+  #   #     script: |
+  #   #       docker pull ${{ env.FRONTEND_IMAGE_NAME }}
+  #   #       docker pull ${{ env.BACKEND_IMAGE_NAME }}
+  #
+  #       # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
+  #       # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
+  #
+  #   - name: Update new Compose file
+  #     uses: "appleboy/ssh-action@v1"
+  #     with:
+  #       host: ${{ secrets.HOST }}
+  #       username: ${{ secrets.USERNAME }}
+  #       key: ${{ secrets.PRIVATE_SSH_KEY }}
+  #       port: 22
+  #       script: |
+  #         cat <<EOF > .env
+  #         PORT=${{ secrets.PORT }}
+  #
+  #         DB_HOST=${{ secrets.DB_HOST }}
+  #         DB_PORT=${{ secrets.DB_PORT }}
+  #         DB_NAME=${{ secrets.DB_NAME }}
+  #         DB_USER=${{ secrets.DB_USER }}
+  #         DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+  #
+  #         VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+  #
+  #         HOST=${{ secrets.HOST }}
+  #         EOF
+  #
+  #           docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
+  #           docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
+  #
+  #           docker compose down
+  #           docker compose up -d --remove-orphans
+  #
+  # Smoke_Testing:
+  #   runs-on: self-hosted
+  #   environment: production
+  #   needs: Deploy
+  #
+  #   steps:
+  #     - name: Check system is up
+  #       run: ping ${{ secrets.HOST }} -c 10 || true
+  #
+  #     - name: Check backend API
+  #       run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+  #
+  #     - name: Check frontend API
+  #       run: curl http://${{ secrets.HOST }}
+  #
