@@ -44,7 +44,7 @@ jobs:
 
       - name: Make .env
         run: |
-          cat .env <<EOF>
+          cat <<EOF > .env
           VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
           EOF
 
