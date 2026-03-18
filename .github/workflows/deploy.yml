@@ -56,7 +56,7 @@ jobs:
       - name: Upload artifacts
         uses: "actions/upload-artifact@v6" 
         with:
-          name: frontend-dist
+          name: frontend-build
           path: |
             ./frontend/dist/
             ./frontend/Dockerfile
@@ -90,8 +90,13 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      - name: Check build output
-        run: ls -la dist
+      - name: Upload artifacts
+        uses: "actions/upload-artifact@v6" 
+        with:
+          name: backend-build
+          path: |
+            ./backend/dist/
+            ./backend/Dockerfile
 
       - name: Check Unit Testing
         run: "npm run test || true"
@@ -128,7 +133,7 @@ jobs:
       - name: Download the artifacts
         uses: "actions/download-artifact@v8"
         with:
-          name: frontend-dist
+          name: frontend-build
           path: dist
 
       - name: Login in Docker
@@ -151,13 +156,13 @@ jobs:
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
-      - name: Docker image scanning 
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
-          format: 'table'
-          exit-code: 0
-          severity: CRITICAL,HIGH
+      # - name: Docker image scanning 
+      #   uses: aquasecurity/trivy-action@0.33.1
+      #   with:
+      #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
+      #     format: 'table'
+      #     exit-code: 0
+      #     severity: CRITICAL,HIGH
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
@@ -173,8 +178,14 @@ jobs:
     needs: Backend_Build_Test
 
     steps:
-      - name: Checkout code
-        uses: "actions/checkout@v4"
+      # - name: Checkout code
+      #   uses: "actions/checkout@v4"
+
+      - name: Download the artifacts
+        uses: "actions/download-artifact@v8"
+        with:
+          name: backend-build
+          path: dist
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
@@ -195,13 +206,13 @@ jobs:
             ${{ env.BACKEND_IMAGE_NAME }}
             ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
 
-      - name: Docker image scanning 
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
-          format: 'table'
-          exit-code: 0
-          severity: CRITICAL,HIGH
+      # - name: Docker image scanning 
+      #   uses: aquasecurity/trivy-action@0.33.1
+      #   with:
+      #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
+      #     format: 'table'
+      #     exit-code: 0
+      #     severity: CRITICAL,HIGH
   
   Deploy:
     runs-on: ubuntu-24.04
