@@ -152,9 +152,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: echo ayushdumasia
-        run: echo ayushdumasia
-
       - name: "Build docker image"
         uses: "docker/setup-buildx-action@v3"
 
@@ -163,6 +160,8 @@ jobs:
         with:
           context: ./frontend
           push: true
+          cache-from: type=gha # stores cache in GitHub cache backend
+          cache-to: type=gha, mode=max # restore cache in next run
           tags: |
             ${{ env.FRONTEND_IMAGE_NAME }}
             ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
@@ -216,6 +215,10 @@ jobs:
         with:
           context: ./backend
           push: true
+          cache-from: type=gha # stores cache in GitHub cache backend
+          # url: 
+          # repository: 
+          cache-to: type=gha, mode=max # restore cache in next run, Mode could be max, min
           tags: |
             ${{ env.BACKEND_IMAGE_NAME }}
             ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
