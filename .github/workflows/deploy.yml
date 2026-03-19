@@ -37,14 +37,14 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: ./frontend
+          cache-dependency-path: ./frontend/package-lock.json
 
       - name: Dependencies scanning
         run: "npm audit"
 
       - name: Install the dependencies
         id: install
-        run: "npm ci"
+        run: "npm ci --loglevel verboose"
 
       - name: Checking linting
         run: "npm run lint || true"
@@ -85,13 +85,13 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: ./backend
+          cache-dependency-path: ./backend/package-lock.json
 
       - name: Dependencies scanning
         run: "npm audit"
 
       - name: Install the dependencies
-        run: "npm ci"
+        run: "npm ci --loglevel verboose"
 
       - name: Checking linting
         run: "npm run lint || true"
