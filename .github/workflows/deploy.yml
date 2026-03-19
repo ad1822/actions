@@ -160,8 +160,8 @@ jobs:
         with:
           context: ./frontend
           push: true
-          cache-from: type=gha # stores cache in GitHub cache backend
-          cache-to: type=gha,mode=max # restore cache in next run
+          cache-from: type=gha,scope=frontend # stores cache in GitHub cache backend
+          cache-to: type=gha,mode=max,scope=frontend # restore cache in next run
           tags: |
             ${{ env.FRONTEND_IMAGE_NAME }}
             ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
@@ -215,8 +215,8 @@ jobs:
         with:
           context: ./backend
           push: true
-          cache-from: type=gha # stores cache in GitHub cache backend
-          cache-to: type=gha,mode=max # restore cache in next run, Mode could be max, min
+          cache-from: type=gha,scope=backend # stores cache in GitHub cache backend
+          cache-to: type=gha,mode=max,scope=backend # restore cache in next run, Mode could be max, min
           # url: 
           # repository: 
           tags: |
