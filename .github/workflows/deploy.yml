@@ -10,17 +10,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}:0:8
-  BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}:0:8
+  FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${${{ github.sha }}:0:8}
+  BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${${{ github.sha }}:0:8}
   FRONTEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
   BACKEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 
 jobs:
-  Just-Echoing-Context:
-    runs-on: self-hosted
-    steps:
-      - run: "echo {{defaultContext}}, ${{ runner.os }}, ${{  github.repository }}"
-
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
     environment: production
