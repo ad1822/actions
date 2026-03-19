@@ -44,7 +44,7 @@ jobs:
 
       - name: Install the dependencies
         id: install
-        run: "npm ci --loglevel verboose"
+        run: "npm ci --loglevel verbose"
 
       - name: Checking linting
         run: "npm run lint || true"
@@ -91,7 +91,7 @@ jobs:
         run: "npm audit"
 
       - name: Install the dependencies
-        run: "npm ci --loglevel verboose"
+        run: "npm ci --loglevel verbose"
 
       - name: Checking linting
         run: "npm run lint || true"
