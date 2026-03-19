@@ -152,7 +152,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: echo ayushdumsia
+      - name: echo ayushdumasia
         run: echo ayushdumasia
 
       - name: "Build docker image"
