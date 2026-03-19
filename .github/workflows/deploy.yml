@@ -36,7 +36,7 @@ jobs:
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
 
-      - run: echo ${{ matrix.index }}
+      # - run: echo ${{ matrix.index }}
 
       - uses: actions/setup-node@v4
         with:
@@ -63,16 +63,12 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      - name: Check build output
-        run: ls -la dist
-
       - name: Check Unit Testing
         run: "npm run test || true"
 
-      - run: ls 
-
       - name: Upload artifacts
         uses: "actions/upload-artifact@v6" 
+        if: ${{ matrix.index == 1 }}
         with:
           name: frontend-build
           path: |
