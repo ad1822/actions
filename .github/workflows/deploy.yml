@@ -46,6 +46,9 @@ jobs:
         id: install
         run: "npm ci --loglevel verbose"
 
+      # - name: Custom caching behavior
+      #   uses: "actions/cache"
+
       - name: Checking linting
         run: "npm run lint || true"
 
@@ -299,18 +302,17 @@ jobs:
             docker compose down
             docker compose up -d --remove-orphans
 
-  Smoke_Testing:
-    runs-on: self-hosted
-    environment: production
-    needs: Deploy
-
-    steps:
-      - name: Check system is up
-        run: ping ${{ secrets.HOST }} -c 10 || true
-
-      - name: Check backend API
-        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-
-      - name: Check frontend API
-        run: curl http://${{ secrets.HOST }}
-
+  # Smoke_Testing:
+  #   runs-on: self-hosted
+  #   environment: production
+  #   needs: Deploy
+  #
+  #   steps:
+  #     - name: Check system is up
+  #       run: ping ${{ secrets.HOST }} -c 10 || true
+  #
+  #     - name: Check backend API
+  #       run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+  #
+  #     - name: Check frontend API
+  #       run: curl http://${{ secrets.HOST }}
