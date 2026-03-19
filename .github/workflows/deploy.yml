@@ -33,10 +33,10 @@ jobs:
         index: [1,2,3]
 
     steps:
-      - run: echo "${{ matrix.index  }}
-
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
+
+      - run: echo ${{ matrix.index }}
 
       - uses: actions/setup-node@v4
         with:
