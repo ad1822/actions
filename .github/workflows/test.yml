@@ -12,7 +12,7 @@ on:
 
 jobs:
   Masking-env:
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
     
     steps:
     - run: echo "${{ toJson(github) }}"
