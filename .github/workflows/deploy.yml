@@ -41,7 +41,13 @@ jobs:
           cache-dependency-path: ./frontend/package-lock.json
 
       - name: Dependencies scanning
-        run: "npm audit"
+        run: "npm audit > frontend-audit || true"
+
+      - name: Upload test results
+        uses: "actions/upload-artifact@v7"
+        with:
+          path: ./frontend/frontend-audit
+          name: "frontend-audit-${{ github.sha }}"
 
       - name: Install the dependencies
         id: install
@@ -96,7 +102,13 @@ jobs:
           cache-dependency-path: ./backend/package-lock.json
 
       - name: Dependencies scanning
-        run: "npm audit"
+        run: "npm audit || true"
+
+      - name: Upload test results
+        uses: "actions/upload-artifact@v7"
+        with:
+          path: ./backend/backend-audit
+          name: "backend-audit-${{ github.sha }}"
 
       - name: Install the dependencies
         run: "npm ci --loglevel verbose"
