@@ -1,0 +1,19 @@
+name: Testing pipeline
+
+
+on:
+  push:
+    branches: 
+      dev
+
+jobs:
+  Masking-env:
+    runs-on: self-hosted
+    
+    steps:
+
+    - name: Generate a env
+      run: |
+        SECRET="Ohhh, FAA"
+        echo "::add-mask::$SECRET"
+        echo "SECRET_VALUE=$SECRET"
