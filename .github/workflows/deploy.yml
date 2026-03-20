@@ -47,7 +47,7 @@ jobs:
         uses: "actions/upload-artifact@v7"
         with:
           path: ./frontend/frontend-audit
-          name: "frontend-audit-${{ github.sha }}"
+          name: "frontend-audit-${{ matrix.node }}-${{ github.sha }}"
 
       - name: Install the dependencies
         id: install
@@ -108,7 +108,7 @@ jobs:
         uses: "actions/upload-artifact@v7"
         with:
           path: ./backend/backend-audit
-          name: "backend-audit-${{ github.sha }}"
+          name: "backend-audit-${{ matrix.node }}-${{ github.sha }}"
 
       - name: Install the dependencies
         run: "npm ci --loglevel verbose"
