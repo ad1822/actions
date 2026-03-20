@@ -7,6 +7,9 @@ on:
   push: 
     branches: 
       dev
+    paths: 
+      - 'backend/**'
+      - 'frontend/**'
 
 concurrency: 
   group: deploy-${{ github.ref }}
@@ -102,7 +105,7 @@ jobs:
           cache-dependency-path: ./backend/package-lock.json
 
       - name: Dependencies scanning
-        run: "npm audit || true"
+        run: "npm audit > backend-audit || true"
 
       - name: Upload test results
         uses: "actions/upload-artifact@v7"
