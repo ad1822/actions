@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    shell: nushell
+    shell: nu {0}
 
 jobs:
   Masking-env:
