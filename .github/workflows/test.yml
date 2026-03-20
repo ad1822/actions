@@ -6,11 +6,17 @@ on:
     branches: 
       dev
 
+defaults:
+  run:
+    shell: nushell
+
 jobs:
   Masking-env:
     runs-on: self-hosted
     
     steps:
+
+    - run: ls /
 
     - name: Generate a env
       run: |
