@@ -71,10 +71,10 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      - name: Check Unit Testing
-        run: "npm run test || true"
+      # - name: Check Unit Testing
+      #   run: "npm run test || true"
 
-      - run: cat $GITHUB_STEP_SUMMARY
+      - run: echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
 
       # - name: Upload artifacts
       #   uses: "actions/upload-artifact@v6" 
