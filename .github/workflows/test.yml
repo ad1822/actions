@@ -2,9 +2,10 @@ name: Testing pipeline
 
 
 on:
-  push:
-    branches: 
-      dev
+  workflow_dispatch: 
+  # push:
+  #   branches: 
+  #     dev
 
 # defaults:
 #   run:
@@ -15,15 +16,17 @@ jobs:
     runs-on: ubuntu-24.04
     
     steps:
-    - run: echo "${{ toJson(github) }}"
+
+    # - run: echo "${{ toJson(github) }}"
 
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
       with:
-        sudo: false
+        limit-access-to-actor: true
+        timeout-minutes: 30
 
-    - name: Generate a env
-      run: |
-        SECRET="Ohhh, FAA"
-        echo "::add-mask::$SECRET"
-        echo "SECRET_VALUE=$SECRET"
+    # - name: Generate a env
+    #   run: |
+    #     SECRET="Ohhh, FAA"
+    #     echo "::add-mask::$SECRET"
+    #     echo "SECRET_VALUE=$SECRET"
