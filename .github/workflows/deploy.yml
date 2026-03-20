@@ -1,12 +1,12 @@
 name: Frontend-backend pipeline
 
 on: 
-  # pull_request: 
-  #   branches: 
-  #     dev
-  push: 
+  pull_request: 
     branches: 
       dev
+  # push: 
+  #   branches: 
+  #     dev
     # paths: 
     #   - 'backend/**'
     #   - 'frontend/**'
@@ -71,10 +71,10 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      # - name: Check Unit Testing
-      #   run: "npm run test || true"
+      - name: Check Unit Testing
+        run: "npm run test || true"
 
-      - run: echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+
 
       # - name: Upload artifacts
       #   uses: "actions/upload-artifact@v6" 

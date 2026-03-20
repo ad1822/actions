@@ -22,6 +22,11 @@ jobs:
     - name: Clone the repo
       uses: "actions/checkout@v4"
 
+    - run: echo "/my/custom/bin" >> $GITHUB_PATH
+    - run: echo $GITHUB_PATH
+
+    - run: echo "## Build Summary " >> $GITHUB_STEP_SUMMARY
+
     # - run: echo "${{ toJson(github) }}"
 
     - name: Setup tmate session
@@ -39,6 +44,7 @@ jobs:
       run: |
         echo ${{ steps.tmate.outputs.ssh-command }}
         echo ${{ steps.tmate.outputs.ssh-address }}
+
 
     # - name: Generate a env
     #   run: |
