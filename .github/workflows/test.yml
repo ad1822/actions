@@ -14,7 +14,10 @@ on:
 jobs:
   Masking-env:
     runs-on: ubuntu-24.04
-    
+    # outputs:
+    #   ssh-command: ${{ steps.tmate.outputs.ssh-command }}
+    #   ssh-address: ${{ steps.tmate.outputs.ssh-address }}
+
     steps:
     - name: Clone the repo
       uses: "actions/checkout@v4"
@@ -23,6 +26,7 @@ jobs:
 
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
+      id: tmate
       with:
         # tmate-server-host: ssh.tmate.io
         # tmate-server-port: 22
@@ -30,6 +34,11 @@ jobs:
         # tmate-server-ed25519-fingerprint: SHA256:jfttvoypkHiQYUqUCwKeqd9d1fJj/ZiQlFOHVl6E9sI
         limit-access-to-actor: true
         # timeout-minutes: 30
+
+    - name: Echo things
+      run: |
+        echo ${{ steps.tmate.outputs.ssh-command }}
+        echo ${{ steps.tmate.outputs.ssh-address }}
 
     # - name: Generate a env
     #   run: |
