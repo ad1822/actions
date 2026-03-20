@@ -6,9 +6,9 @@ on:
     branches: 
       dev
 
-defaults:
-  run:
-    shell: nu {0}
+# defaults:
+#   run:
+#     shell: nu {0}
 
 jobs:
   Masking-env:
