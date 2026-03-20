@@ -1,16 +1,15 @@
 name: Frontend-backend pipeline
 
 on: 
-  pull_request: 
+  # pull_request: 
+  #   branches: 
+  #     dev
+  push: 
     branches: 
       dev
 
-  # push: 
-  #   branches: 
-  #     dev
-  #
 concurrency: 
-  group: idk
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -29,17 +28,15 @@ jobs:
 
     strategy:
       matrix:
-        index: [1,2,3]
+        node: [22,24]
 
     steps:
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
 
-      # - run: echo ${{ matrix.index }}
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
@@ -84,13 +81,17 @@ jobs:
       run:
         working-directory: ./backend
 
+    strategy:
+      matrix:
+        node: [22,24]
+
     steps:
       - name: Clone the frontend repo 
         uses: "actions/checkout@v4"
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
