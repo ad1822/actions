@@ -118,7 +118,7 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}
             ${{ env.FRONTEND_IMAGE_LATEST }}
           build-args: |
-            VITE_BASE_URL=http://localhost:8080
+            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
