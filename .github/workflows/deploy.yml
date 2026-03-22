@@ -71,7 +71,7 @@ jobs:
       - name: Build the code
         run: "npm run build"
 
-      - name: Check Unit Testing
+      - name: Run Unit Testing
         run: "npm run test || true"
 
 
@@ -85,45 +85,45 @@ jobs:
       #       ./frontend/dist/
       #       ./frontend/Dockerfile
 
-  # Backend_Build_Test:
-  #   runs-on: ubuntu-24.04
-  #   environment: production
-  #   defaults:
-  #     run:
-  #       working-directory: ./backend
-  #
-  #   strategy:
-  #     matrix:
-  #       node: [22,24]
-  #
-  #   steps:
-  #     - name: Clone the frontend repo 
-  #       uses: "actions/checkout@v4"
-  #
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'npm'
-  #         cache-dependency-path: ./backend/package-lock.json
-  #
-  #     - name: Dependencies scanning
-  #       run: "npm audit > backend-audit || true"
-  #
-  #     - name: Upload test results
-  #       uses: "actions/upload-artifact@v7"
-  #       with:
-  #         path: ./backend/backend-audit
-  #         name: "backend-audit-${{ matrix.node }}-${{ github.sha }}"
-  #
-  #     - name: Install the dependencies
-  #       run: "npm ci --loglevel verbose"
-  #
-  #     - name: Checking linting
-  #       run: "npm run lint || true"
-  #
-  #     - name: Build the code
-  #       run: "npm run build"
-  #
+  Backend_Build_Test:
+    runs-on: ubuntu-24.04
+    environment: production
+    defaults:
+      run:
+        working-directory: ./backend
+
+    strategy:
+      matrix:
+        node: [22,24]
+
+    steps:
+      - name: Clone the frontend repo 
+        uses: "actions/checkout@v4"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: ./backend/package-lock.json
+
+      - name: Dependencies scanning
+        run: "npm audit > backend-audit || true"
+
+      - name: Upload test results
+        uses: "actions/upload-artifact@v7"
+        with:
+          path: ./backend/backend-audit
+          name: "backend-audit-${{ matrix.node }}-${{ github.sha }}"
+
+      - name: Install the dependencies
+        run: "npm ci --loglevel verbose"
+
+      - name: Checking linting
+        run: "npm run lint || true"
+
+      - name: Build the code
+        run: "npm run build"
+
   #     # - name: Upload artifacts
   #     #   uses: "actions/upload-artifact@v6" 
   #     #   with:
@@ -132,8 +132,8 @@ jobs:
   #     #       ./backend/dist/
   #     #       ./backend/Dockerfile
   #
-  #     - name: Check Unit Testing
-  #       run: "npm run test || true"
+      - name: Run Unit Testing
+        run: "npm run test || true"
 
   # Generate_Github_SHA:
   #   runs-on: ubuntu-24.04
@@ -148,51 +148,98 @@ jobs:
   #       id: github-sha
   #       run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-  # Frontend_Build_Image:
-  #   runs-on: ubuntu-24.04
-  #   needs: Frontend_Build_Test
-  #
-  #   # env:
-  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-  #   defaults:
-  #     run:
-  #       working-directory: ./frontend
-  #
-  #   environment: production
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: "actions/checkout@v4"
-  #
+  Run_Integration_Test:
+    runs-on: ubuntu-22.04
+    needs: [Frontend_Build_Test, Backend_Build_Test]
+
+    steps:
+      - name: Clone the repo
+        uses: "actions/checkout@v4"
+
+      - name: Create .env
+        run: |
+          cat <<EOF > .env
+          PORT=8080
+
+          DB_HOST=database
+          DB_PORT=5432
+          DB_NAME=admindb
+          DB_USER=root
+          DB_PASSWORD=admin123
+
+          VITE_BASE_URL=http://localhost:8080
+
+          HOST=localhost
+          EOF
+
+      - name: Start  services
+        run: docker compose up -d --build
+
+      - name: Wait for backend to up
+        run: |
+          for i in {1..20}; do
+            curl http://localhost:8080/health && break
+            sleep 3
+          done
+
+      - name: Run frontend integration test
+        run: |
+          cd frontend
+          npm ci 
+          npm run test:integration
+            
+      - name: Cleanup
+        run: docker compose down
+        
+
+
+
+  Frontend_Build_Image:
+    runs-on: ubuntu-24.04
+    needs: Frontend_Build_Test
+
+    # env:
+    #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+
   #     # - name: Download the artifacts
   #     #   uses: "actions/download-artifact@v8"
   #     #   with:
   #     #     name: frontend-build
   #     #     path: dist
   #     #
-  #
-  #     - name: Login in Docker
-  #       uses: "docker/login-action@v3"
-  #       with:
-  #         username: ${{ secrets.DOCKER_USERNAME }}
-  #         password: ${{ secrets.DOCKER_PASSWORD }}
-  #
-  #     - name: "Build docker image"
-  #       uses: "docker/setup-buildx-action@v3"
-  #
-  #     - name: Build and push
-  #       uses: docker/build-push-action@v7
-  #       with:
-  #         context: ./frontend
-  #         push: true
-  #         cache-from: type=gha,scope=frontend # stores cache in GitHub cache backend
-  #         cache-to: type=gha,mode=max,scope=frontend # restore cache in next run
-  #         tags: |
-  #           ${{ env.FRONTEND_IMAGE_NAME }}
-  #           ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
-  #         build-args: |
-  #           VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
-  #
+
+      - name: Login in Docker
+        uses: "docker/login-action@v3"
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: "Build docker image"
+        uses: "docker/setup-buildx-action@v3"
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: true
+          cache-from: type=gha,scope=frontend # stores cache in GitHub cache backend
+          cache-to: type=gha,mode=max,scope=frontend # restore cache in next run
+          tags: |
+            ${{ env.FRONTEND_IMAGE_NAME }}
+            ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
+          build-args: |
+            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
+
   #     # - name: Docker image scanning 
   #     #   uses: aquasecurity/trivy-action@0.33.1
   #     #   with:
@@ -200,9 +247,9 @@ jobs:
   #     #     format: 'table'
   #     #     exit-code: 0
   #     #     severity: CRITICAL,HIGH
-  #
-  # Backend_Build_Image:
-  #   runs-on: ubuntu-24.04
+
+  Backend_Build_Image:
+    runs-on: ubuntu-24.04
   #
   #   # defaults:
   #   #   run:
@@ -211,12 +258,12 @@ jobs:
   #   # env:
   #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
   #
-  #   environment: production
-  #   needs: Backend_Build_Test
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: "actions/checkout@v4"
+    environment: production
+    needs: Backend_Build_Test
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
   #
   #     # - name: Download the artifacts
   #     #   uses: "actions/download-artifact@v8"
@@ -224,29 +271,29 @@ jobs:
   #     #     name: backend-build
   #     #     path: dist
   #
-  #     - name: Login in Docker
-  #       uses: "docker/login-action@v3"
-  #       with:
-  #         username: ${{ secrets.DOCKER_USERNAME }}
-  #         password: ${{ secrets.DOCKER_PASSWORD }}
-  #
-  #
-  #     - name: "Build docker image"
-  #       uses: "docker/setup-buildx-action@v3"
-  #
-  #     - name: Build and push
-  #       uses: docker/build-push-action@v7
-  #
-  #       with:
-  #         context: ./backend
-  #         push: true
-  #         cache-from: type=gha,scope=backend # stores cache in GitHub cache backend
-  #         cache-to: type=gha,mode=max,scope=backend # restore cache in next run, Mode could be max, min
-  #         # url: 
-  #         # repository: 
-  #         tags: |
-  #           ${{ env.BACKEND_IMAGE_NAME }}
-  #           ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
+      - name: Login in Docker
+        uses: "docker/login-action@v3"
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+    
+      - name: "Build docker image"
+        uses: "docker/setup-buildx-action@v3"
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+
+        with:
+          context: ./backend
+          push: true
+          cache-from: type=gha,scope=backend # stores cache in GitHub cache backend
+          cache-to: type=gha,mode=max,scope=backend # restore cache in next run, Mode could be max, min
+      # url: 
+      # repository: 
+          tags: |
+            ${{ env.BACKEND_IMAGE_NAME }}
+            ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
 
       # - name: Docker image scanning 
       #   uses: aquasecurity/trivy-action@0.33.1
@@ -324,17 +371,17 @@ jobs:
   #           docker compose down
   #           docker compose up -d --remove-orphans
 
-  # Smoke_Testing:
-  #   runs-on: self-hosted
-  #   environment: production
-  #   needs: Deploy
-  #
-  #   steps:
-  #     - name: Check system is up
-  #       run: ping ${{ secrets.HOST }} -c 10 || true
-  #
-  #     - name: Check backend API
-  #       run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-  #
-  #     - name: Check frontend API
-  #       run: curl http://${{ secrets.HOST }}
+  Smoke_Testing:
+    runs-on: self-hosted
+    environment: production
+    needs: Deploy
+
+    steps:
+      - name: Check system is up
+        run: ping ${{ secrets.HOST }} -c 10 || true
+
+      - name: Check backend API
+        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+
+      - name: Check frontend API
+        run: curl http://${{ secrets.HOST }}
