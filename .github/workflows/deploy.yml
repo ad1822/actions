@@ -120,6 +120,7 @@ jobs:
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
+    environment: production
 
     steps:
       - name: Clone the repo
