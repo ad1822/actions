@@ -144,48 +144,6 @@ jobs:
   #       id: github-sha
   #       run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-  Run_Integration_Test:
-    runs-on: ubuntu-22.04
-    needs: [Frontend_Build_Test, Backend_Build_Test]
-
-    steps:
-      - name: Clone the repo
-        uses: "actions/checkout@v4"
-
-      - name: Create .env
-        run: |
-          cat <<EOF > .env
-          PORT=8080
-
-          DB_HOST=database
-          DB_PORT=5432
-          DB_NAME=admindb
-          DB_USER=root
-          DB_PASSWORD=admin123
-
-          VITE_BASE_URL=http://localhost:8080
-
-          HOST=localhost
-          EOF
-
-      - name: Start  services
-        run: docker compose up -d --build
-
-      - name: Wait for backend to up
-        run: |
-          for i in {1..20}; do
-            curl http://localhost:8080/health && break
-            sleep 3
-          done
-
-      - name: Run frontend integration test
-        run: |
-          cd frontend
-          npm ci 
-          npm run test:integration
-            
-      - name: Cleanup
-        run: docker compose down
         
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
@@ -295,6 +253,55 @@ jobs:
       #     format: 'table'
       #     exit-code: 0
       #     severity: CRITICAL,HIGH
+  
+  Run_Integration_Test:
+    runs-on: ubuntu-22.04
+    needs: [Frontend_Build_Test, Backend_Build_Test, Frontend_Build_Image, Backend_Build_Image]
+
+    steps:
+      - name: Clone the repo
+        uses: "actions/checkout@v4"
+
+      - name: Create .env
+        run: |
+          cat <<EOF > .env
+          PORT=8080
+
+          DB_HOST=database
+          DB_PORT=5432
+          DB_NAME=admindb
+          DB_USER=root
+          DB_PASSWORD=admin123
+
+          VITE_BASE_URL=http://backend:8080
+
+          HOST=localhost
+          EOF
+
+      - name: Pull latest images
+        run: |
+          export FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE_NAME }}
+          export BACKEND_IMAGE=${{ env.BACKEND_IMAGE_NAME }}
+          docker compose up -d
+
+      - name: Start  services
+        run: docker compose up -d
+
+      - name: Wait for backend to up
+        run: |
+          for i in {1..20}; do
+            curl http://localhost:8080/health && break
+            sleep 3
+          done
+
+      - name: Run frontend integration test
+        run: |
+          cd frontend
+          npm ci 
+          npm run test:integration
+            
+      - name: Cleanup
+        run: docker compose down
   
   # Deploy:
   #   runs-on: ubuntu-24.04
