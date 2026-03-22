@@ -1,12 +1,18 @@
 name: Frontend-backend pipeline
 
 on: 
+  # workflow_dispatch: 
+  #   inputs:
+  #     environment:
+  #       description: "select an environment to run"
+  #       type: environment
+  #       default: "dev"
+
   pull_request: 
-    branches: 
-      dev
+    branches: [main]
   push: 
-    branches: 
-      dev
+    branches: [dev, main]
+
     # paths: 
     #   - 'backend/**'
     #   - 'frontend/**'
@@ -22,9 +28,11 @@ env:
   BACKEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 
 jobs:
+
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
-    environment: production
+    environment: development
+    if: ${{ github.ref == 'refs/heads/dev' }}
     defaults:
       run:
         working-directory: ./frontend
@@ -71,18 +79,9 @@ jobs:
       - name: Run Unit Testing
         run: "npm run test || true"
 
-      # - name: Upload artifacts
-      #   uses: "actions/upload-artifact@v6" 
-      #   if: ${{ matrix.index == 1 }}
-      #   with:
-      #     name: frontend-build
-      #     path: |
-      #       ./frontend/dist/
-      #       ./frontend/Dockerfile
-
   Backend_Build_Test:
     runs-on: ubuntu-24.04
-    environment: production
+    environment: development
     defaults:
       run:
         working-directory: ./backend
@@ -92,7 +91,7 @@ jobs:
         node: [22,24]
 
     steps:
-      - name: Clone the frontend repo 
+      - name: Clone the repo 
         uses: "actions/checkout@v4"
 
       - uses: actions/setup-node@v4
@@ -122,52 +121,17 @@ jobs:
       - name: Run Unit Testing
         run: "npm run test || true"
 
-  #     # - name: Upload artifacts
-  #     #   uses: "actions/upload-artifact@v6" 
-  #     #   with:
-  #     #     name: backend-build
-  #     #     path: |
-  #     #       ./backend/dist/
-  #     #       ./backend/Dockerfile
-  #
-
-  # Generate_Github_SHA:
-  #   runs-on: ubuntu-24.04
-  #   outputs:
-  #     github-sha: ${{ steps.github-sha.outputs.github-sha }}
-  #
-  #   steps:
-  #     - name: Clone the repo
-  #       uses: "actions/checkout@v4"
-  #
-  #     - name: Generate a SHA for Docker tag
-  #       id: github-sha
-  #       run: echo "github-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-        
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
-
-    # env:
-    #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
 
     defaults:
       run:
         working-directory: ./frontend
 
-    environment: production
-
     steps:
       - name: Checkout code
         uses: "actions/checkout@v4"
-
-  #     # - name: Download the artifacts
-  #     #   uses: "actions/download-artifact@v8"
-  #     #   with:
-  #     #     name: frontend-build
-  #     #     path: dist
-  #     #
 
       - name: Login in Docker
         uses: "docker/login-action@v3"
@@ -183,81 +147,48 @@ jobs:
         with:
           context: ./frontend
           push: true
-          cache-from: type=gha,scope=frontend # stores cache in GitHub cache backend
-          cache-to: type=gha,mode=max,scope=frontend # restore cache in next run
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
           tags: |
             ${{ env.FRONTEND_IMAGE }}
             ${{ env.FRONTEND_IMAGE_LATEST }} 
           build-args: |
-            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
-
-  #     # - name: Docker image scanning 
-  #     #   uses: aquasecurity/trivy-action@0.33.1
-  #     #   with:
-  #     #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE }}'
-  #     #     format: 'table'
-  #     #     exit-code: 0
-  #     #     severity: CRITICAL,HIGH
+            VITE_BASE_URL=http://backend:8080
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
-  #
-  #   # defaults:
-  #   #   run:
-  #   #     working-directory: ./backend
-  #   # needs: Generate_Github_SHA
-  #   # env:
-  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-  #
-    environment: production
+    environment: development
     needs: Backend_Build_Test
 
     steps:
       - name: Checkout code
         uses: "actions/checkout@v4"
-  #
-  #     # - name: Download the artifacts
-  #     #   uses: "actions/download-artifact@v8"
-  #     #   with:
-  #     #     name: backend-build
-  #     #     path: dist
-  #
+
       - name: Login in Docker
         uses: "docker/login-action@v3"
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-    
       - name: "Build docker image"
         uses: "docker/setup-buildx-action@v3"
 
       - name: Build and push
         uses: docker/build-push-action@v7
-
         with:
           context: ./backend
           push: true
-          cache-from: type=gha,scope=backend # stores cache in GitHub cache backend
-          cache-to: type=gha,mode=max,scope=backend # restore cache in next run, Mode could be max, min
-      # url: 
-      # repository: 
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
           tags: |
             ${{ env.BACKEND_IMAGE }}
             ${{ env.BACKEND_IMAGE_LATEST }} 
 
-      # - name: Docker image scanning 
-      #   uses: aquasecurity/trivy-action@0.33.1
-      #   with:
-      #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE }}'
-      #     format: 'table'
-      #     exit-code: 0
-      #     severity: CRITICAL,HIGH
-  
   Run_Integration_Test:
     runs-on: ubuntu-22.04
-    needs: [Frontend_Build_Test, Backend_Build_Test, Frontend_Build_Image, Backend_Build_Image]
-    environment: production
+    needs: [ Frontend_Build_Image, Backend_Build_Image]
+    if: ${{ github.ref == 'refs/heads/dev' }}
+    environment: development
 
     steps:
       - name: Clone the repo
@@ -279,12 +210,16 @@ jobs:
           HOST=localhost
           EOF
 
+      - name: Pull images
+        run: |
+          docker pull ${{ env.FRONTEND_IMAGE }}
+          docker pull ${{ env.BACKEND_IMAGE }}
+
       - name: Start docker compose
         env:
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-        run: |
-          docker compose up -d
+        run: docker compose up -d
 
       - name: Wait for backend to up
         run: |
@@ -302,85 +237,39 @@ jobs:
       - name: Cleanup
         run: docker compose down
   
-  # Deploy:
-  #   runs-on: ubuntu-24.04
-  #   environment: production
-  #   needs:
-  #     - Frontend_Build_Image
-  #     - Backend_Build_Image
-  #
-  #   # env:
-  #   #   github-sha: ${{ needs.Generate_Github_SHA.outputs.github-sha }}
-  #
-  #   steps:
-  #   - name: Clone the repo
-  #     uses: "actions/checkout@v4"
-  #
-  #   - name: Copy compose.yaml to server
-  #     uses: appleboy/scp-action@v1
-  #     with:
-  #       host: ${{ secrets.HOST }}
-  #       username: ${{ secrets.USERNAME }}
-  #       key: ${{ secrets.PRIVATE_SSH_KEY }}
-  #       port: 22
-  #       source: 'compose.yaml'
-  #       target: '/home/ubuntu'
-  #
-  #   # - name: Update new Compose file
-  #   #   uses: appleboy/ssh-action@v1
-  #   #   with:
-  #   #     host: ${{ secrets.HOST }}
-  #   #     username: ${{ secrets.USERNAME }}
-  #   #     key: ${{ secrets.PRIVATE_SSH_KEY }}
-  #   #     port: 22
-  #   #     script: |
-  #   #       docker pull ${{ env.FRONTEND_IMAGE }}
-  #   #       docker pull ${{ env.BACKEND_IMAGE }}
-  #
-  #       # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE }}|g" ~/compose.yaml
-  #       # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE }}|g" ~/compose.yaml
-  #
-  #   - name: Update new Compose file
-  #     uses: "appleboy/ssh-action@v1"
-  #     with:
-  #       host: ${{ secrets.HOST }}
-  #       username: ${{ secrets.USERNAME }}
-  #       key: ${{ secrets.PRIVATE_SSH_KEY }}
-  #       port: 22
-  #       script: |
-  #         cat <<EOF > .env
-  #         PORT=${{ secrets.PORT }}
-  #
-  #         DB_HOST=${{ secrets.DB_HOST }}
-  #         DB_PORT=${{ secrets.DB_PORT }}
-  #         DB_NAME=${{ secrets.DB_NAME }}
-  #         DB_USER=${{ secrets.DB_USER }}
-  #         DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-  #
-  #         VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
-  #
-  #         HOST=${{ secrets.HOST }}
-  #         EOF
-  #
-  #           cat .env
-  #
-  #           docker pull ${{ env.FRONTEND_IMAGE_LATEST }}
-  #           docker pull ${{ env.BACKEND_IMAGE_LATEST }}
-  #
-  #           docker compose down
-  #           docker compose up -d --remove-orphans
+  Deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    needs:
+      - Frontend_Build_Image
+      - Backend_Build_Image
 
-  # Smoke_Testing:
-  #   runs-on: ubuntu-
-  #   environment: production
-  #   needs: Deploy
-  #
-  #   steps:
-  #     - name: Check system is up
-  #       run: ping ${{ secrets.HOST }} -c 10 || true
-  #
-  #     - name: Check backend API
-  #       run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-  #
-  #     - name: Check frontend API
-  #       run: curl http://${{ secrets.HOST }}
+    steps:
+    - name: Clone the repo
+      uses: "actions/checkout@v4"
+
+    - name: Copy compose.yaml to server
+      uses: appleboy/scp-action@v1
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_SSH_KEY }}
+        port: 22
+        source: 'compose.yaml'
+        target: '/home/ubuntu'
+
+  Smoke_Testing:
+    runs-on: ubuntu-24.04
+    environment: production
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: Deploy
+
+    steps:
+      - name: Check system is up
+        run: ping ${{ secrets.HOST }} -c 10 || true
+
+      - name: Check backend API
+        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+
+      - name: Check frontend API
+        run: curl http://${{ secrets.HOST }}
