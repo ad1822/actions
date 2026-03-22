@@ -13,10 +13,6 @@ on:
   push: 
     branches: [dev, main]
 
-    # paths: 
-    #   - 'backend/**'
-    #   - 'frontend/**'
-
 concurrency: 
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -31,8 +27,7 @@ jobs:
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
-    environment: development
-    if: ${{ github.ref == 'refs/heads/dev' }}
+    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: ./frontend
@@ -42,8 +37,7 @@ jobs:
         node: [22,24]
 
     steps:
-      - name: Clone the frontend repo 
-        uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -51,37 +45,26 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
-      - name: Dependencies scanning
-        run: "npm audit > frontend-audit || true"
+      - run: npm audit > frontend-audit || true
 
-      - name: Upload test results
-        uses: "actions/upload-artifact@v7"
+      - uses: actions/upload-artifact@v7
         with:
           path: ./frontend/frontend-audit
-          name: "frontend-audit-${{ matrix.node }}-${{ github.sha }}"
+          name: frontend-audit-${{ matrix.node }}-${{ github.sha }}
 
-      - name: Install the dependencies
-        id: install
-        run: "npm ci --loglevel verbose"
+      - run: npm ci --loglevel verbose
+      - run: npm run lint || true
 
-      - name: Checking linting
-        run: "npm run lint || true"
+      # CI should NOT depend on production URL
+      - run: |
+          echo "VITE_BASE_URL=http://localhost:8080" > .env
 
-      - name: Make .env
-        run: |
-          cat <<EOF > .env
-          VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
-          EOF
-
-      - name: Build the code
-        run: "npm run build"
-
-      - name: Run Unit Testing
-        run: "npm run test || true"
+      - run: npm run build
+      - run: npm run test || true
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
-    environment: development
+    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: ./backend
@@ -91,8 +74,7 @@ jobs:
         node: [22,24]
 
     steps:
-      - name: Clone the repo 
-        uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -100,50 +82,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
-      - name: Dependencies scanning
-        run: "npm audit > backend-audit || true"
+      - run: npm audit > backend-audit || true
 
-      - name: Upload test results
-        uses: "actions/upload-artifact@v7"
+      - uses: actions/upload-artifact@v7
         with:
           path: ./backend/backend-audit
-          name: "backend-audit-${{ matrix.node }}-${{ github.sha }}"
+          name: backend-audit-${{ matrix.node }}-${{ github.sha }}
 
-      - name: Install the dependencies
-        run: "npm ci --loglevel verbose"
-
-      - name: Checking linting
-        run: "npm run lint || true"
-
-      - name: Build the code
-        run: "npm run build"
-
-      - name: Run Unit Testing
-        run: "npm run test || true"
+      - run: npm ci --loglevel verbose
+      - run: npm run lint || true
+      - run: npm run build
+      - run: npm run test || true
 
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
 
-    defaults:
-      run:
-        working-directory: ./frontend
-
     steps:
-      - name: Checkout code
-        uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
-      - name: Login in Docker
-        uses: "docker/login-action@v3"
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: "Build docker image"
-        uses: "docker/setup-buildx-action@v3"
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
-        uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
@@ -151,30 +116,25 @@ jobs:
           cache-to: type=gha,mode=max,scope=frontend
           tags: |
             ${{ env.FRONTEND_IMAGE }}
-            ${{ env.FRONTEND_IMAGE_LATEST }} 
+            ${{ env.FRONTEND_IMAGE_LATEST }}
           build-args: |
             VITE_BASE_URL=http://backend:8080
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
-    environment: development
     needs: Backend_Build_Test
 
     steps:
-      - name: Checkout code
-        uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
-      - name: Login in Docker
-        uses: "docker/login-action@v3"
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: "Build docker image"
-        uses: "docker/setup-buildx-action@v3"
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
-        uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
@@ -182,94 +142,76 @@ jobs:
           cache-to: type=gha,mode=max,scope=backend
           tags: |
             ${{ env.BACKEND_IMAGE }}
-            ${{ env.BACKEND_IMAGE_LATEST }} 
+            ${{ env.BACKEND_IMAGE_LATEST }}
 
   Run_Integration_Test:
     runs-on: ubuntu-22.04
-    needs: [ Frontend_Build_Image, Backend_Build_Image]
+    needs: [Frontend_Build_Image, Backend_Build_Image]
     if: ${{ github.ref == 'refs/heads/dev' }}
-    environment: development
 
     steps:
-      - name: Clone the repo
-        uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
-      - name: Create .env
-        run: |
+      - run: |
           cat <<EOF > .env
           PORT=8080
-
           DB_HOST=database
           DB_PORT=5432
           DB_NAME=admindb
           DB_USER=root
           DB_PASSWORD=admin123
-
           VITE_BASE_URL=http://backend:8080
-
           HOST=localhost
           EOF
 
-      - name: Pull images
-        run: |
+      - run: |
           docker pull ${{ env.FRONTEND_IMAGE }}
           docker pull ${{ env.BACKEND_IMAGE }}
 
-      - name: Start docker compose
+      - run: docker compose up -d
         env:
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-        run: docker compose up -d
 
-      - name: Wait for backend to up
-        run: |
+      - run: |
           for i in {1..20}; do
             curl http://localhost:8080/health && break
             sleep 3
           done
 
-      - name: Run frontend integration test
-        run: |
+      - run: |
           cd frontend
           npm ci 
           npm run test:integration
-            
-      - name: Cleanup
-        run: docker compose down
-  
+
+      - run: docker compose down
+
   Deploy:
     runs-on: ubuntu-24.04
     environment: production
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs:
       - Frontend_Build_Image
       - Backend_Build_Image
 
     steps:
-    - name: Clone the repo
-      uses: "actions/checkout@v4"
+      - uses: actions/checkout@v4
 
-    - name: Copy compose.yaml to server
-      uses: appleboy/scp-action@v1
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_SSH_KEY }}
-        port: 22
-        source: 'compose.yaml'
-        target: '/home/ubuntu'
+      - uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_SSH_KEY }}
+          port: 22
+          source: 'compose.yaml'
+          target: '/home/ubuntu'
 
   Smoke_Testing:
     runs-on: ubuntu-24.04
     environment: production
-    if: ${{ github.ref == 'refs/heads/main' }}
     needs: Deploy
 
     steps:
-      - name: Check system is up
-        run: ping ${{ secrets.HOST }} -c 10 || true
-
-      - name: Check backend API
-        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-
-      - name: Check frontend API
-        run: curl http://${{ secrets.HOST }}
+      - run: ping ${{ secrets.HOST }} -c 10 || true
+      - run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+      - run: curl http://${{ secrets.HOST }}
