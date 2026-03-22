@@ -37,30 +37,42 @@ jobs:
         node: [22,24]
 
     steps:
-      - uses: actions/checkout@v4
+        
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup node action
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
-      - run: npm audit > frontend-audit || true
+      - name: Security scanning in npm
+        run: npm audit > frontend-audit || true
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload audit results
+        uses: actions/upload-artifact@v7
         with:
           path: ./frontend/frontend-audit
           name: frontend-audit-${{ matrix.node }}-${{ github.sha }}
 
-      - run: npm ci --loglevel verbose
-      - run: npm run lint || true
+      - name: Install dependencies
+        run: npm ci --loglevel verbose
+
+      - name: Run lint test
+        run: npm run lint || true
 
       # CI should NOT depend on production URL
-      - run: |
+      - name: Create .env file
+        run: |
           echo "VITE_BASE_URL=http://localhost:8080" > .env
 
-      - run: npm run build
-      - run: npm run test || true
+      - name: Run build
+        run: npm run build
+      
+      - name: Run unit tests
+        run: npm run test || true
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
@@ -74,41 +86,56 @@ jobs:
         node: [22,24]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup node action
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
-      - run: npm audit > backend-audit || true
+      - name: Security scanning in npm
+        run: npm audit > backend-audit || true
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload audit results
+        uses: actions/upload-artifact@v7
         with:
           path: ./backend/backend-audit
           name: backend-audit-${{ matrix.node }}-${{ github.sha }}
 
-      - run: npm ci --loglevel verbose
-      - run: npm run lint || true
-      - run: npm run build
-      - run: npm run test || true
+      - name: Install dependencies
+        run: npm ci --loglevel verbose
+
+      - name: Run lint test
+        run: npm run lint || true
+
+      - name: Run build
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm run test || true
 
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - uses: docker/login-action@v3
+      - name: Login docker
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@v3
 
-      - uses: docker/build-push-action@v7
+      - name: Docker build and push
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
@@ -125,16 +152,20 @@ jobs:
     needs: Backend_Build_Test
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - uses: docker/login-action@v3
+      - name: Login docker
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@v3
 
-      - uses: docker/build-push-action@v7
+      - name: Docker build and push
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
@@ -150,9 +181,11 @@ jobs:
     if: ${{ github.ref == 'refs/heads/dev' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - run: |
+      - name: Generate a .env file
+        run: |
           cat <<EOF > .env
           PORT=8080
           DB_HOST=database
@@ -164,36 +197,35 @@ jobs:
           HOST=localhost
           EOF
 
-      - run: |
-          docker pull ${{ env.FRONTEND_IMAGE }}
+      - name: Pull the latest image for backend
+        run: |
+          # docker pull ${{ env.FRONTEND_IMAGE }}
           docker pull ${{ env.BACKEND_IMAGE }}
 
-      - run: docker compose up -d
+      - name: Start a docker compose
+        run: docker compose up -d
         env:
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
 
-      - run: |
+      - name: Wait for backend to start
+        run: |
           for i in {1..20}; do
             curl http://localhost:8080/health && break
             sleep 3
           done
 
 
-      - run: |
+      - name: Test integration test
+        run: |
           cd frontend
           npm ci 
           npm run test:integration
         env:
           VITE_BASE_URL: http://localhost:8080   
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        id: tmate
-        with:
-          limit-access-to-actor: true
-
-      - run: docker compose down
+      - name: Docker cleanup
+        run: docker compose down
 
   Deploy:
     runs-on: ubuntu-24.04
@@ -204,9 +236,11 @@ jobs:
       - Backend_Build_Image
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone the repo
+        uses: actions/checkout@v4
 
-      - uses: appleboy/scp-action@v1
+      - name: Copy compose file into EC2
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -214,6 +248,35 @@ jobs:
           port: 22
           source: 'compose.yaml'
           target: '/home/ubuntu'
+
+      - name: Update new Compose file
+        uses: "appleboy/ssh-action@v1"
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_SSH_KEY }}
+          port: 22
+          script: |
+            cat <<EOF > .env
+            PORT=${{ secrets.PORT }}
+
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+            FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
+            BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}
+
+            EOF
+              
+
+              docker pull ${{ env.FRONTEND_IMAGE }}
+              docker pull ${{ env.BACKEND_IMAGE }}
+
+              docker compose --env-file .env down
+              docker compose --env-file .env up -d --remove-orphans
 
   Smoke_Testing:
     runs-on: ubuntu-24.04
