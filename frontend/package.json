@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest --run"
+    "test": "vitest  --reporter=github-actions",
+    "test:integration": "vitest run --reporter=verbose api.integration.test.ts",
+    "test:unit": "vitest run --reporter=verbose --exclude='**/*.integration.test.ts'"
   },
   "dependencies": {
     "axios": "^1.7.7",
