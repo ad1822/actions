@@ -21,10 +21,10 @@ services:
 
   frontend:
     image: ${FRONTEND_IMAGE}
-    build:
-     context: ./frontend
-     args:
-      - VITE_BASE_URL=${VITE_BASE_URL}
+    # build:
+    #  context: ./frontend
+     # args:
+     #  - VITE_BASE_URL=${VITE_BASE_URL}
     depends_on:
     - backend
     ports:

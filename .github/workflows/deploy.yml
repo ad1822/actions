@@ -16,10 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FRONTEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-  BACKEND_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-  FRONTEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
-  BACKEND_IMAGE_NAME_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+  FRONTEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE }}:latest
+  BACKEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 
 jobs:
   Frontend_Build_Test:
@@ -186,15 +186,15 @@ jobs:
           cache-from: type=gha,scope=frontend # stores cache in GitHub cache backend
           cache-to: type=gha,mode=max,scope=frontend # restore cache in next run
           tags: |
-            ${{ env.FRONTEND_IMAGE_NAME }}
-            ${{ env.FRONTEND_IMAGE_NAME_LATEST }} 
+            ${{ env.FRONTEND_IMAGE }}
+            ${{ env.FRONTEND_IMAGE_LATEST }} 
           build-args: |
             VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
   #     # - name: Docker image scanning 
   #     #   uses: aquasecurity/trivy-action@0.33.1
   #     #   with:
-  #     #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE_NAME }}'
+  #     #     image-ref: 'docker.io/${{ env.FRONTEND_IMAGE }}'
   #     #     format: 'table'
   #     #     exit-code: 0
   #     #     severity: CRITICAL,HIGH
@@ -243,13 +243,13 @@ jobs:
       # url: 
       # repository: 
           tags: |
-            ${{ env.BACKEND_IMAGE_NAME }}
-            ${{ env.BACKEND_IMAGE_NAME_LATEST }} 
+            ${{ env.BACKEND_IMAGE }}
+            ${{ env.BACKEND_IMAGE_LATEST }} 
 
       # - name: Docker image scanning 
       #   uses: aquasecurity/trivy-action@0.33.1
       #   with:
-      #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE_NAME }}'
+      #     image-ref: 'docker.io/${{ env.BACKEND_IMAGE }}'
       #     format: 'table'
       #     exit-code: 0
       #     severity: CRITICAL,HIGH
@@ -257,8 +257,8 @@ jobs:
   Run_Integration_Test:
     runs-on: ubuntu-22.04
     needs: [Frontend_Build_Test, Backend_Build_Test, Frontend_Build_Image, Backend_Build_Image]
-
     environment: production
+
     steps:
       - name: Clone the repo
         uses: "actions/checkout@v4"
@@ -279,14 +279,12 @@ jobs:
           HOST=localhost
           EOF
 
-      - name: Pull latest images
+      - name: Start docker compose
+        env:
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
         run: |
-          export FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE_NAME }}
-          export BACKEND_IMAGE=${{ env.BACKEND_IMAGE_NAME }}
           docker compose up -d
-
-      - name: Start  services
-        run: docker compose up -d
 
       - name: Wait for backend to up
         run: |
@@ -336,11 +334,11 @@ jobs:
   #   #     key: ${{ secrets.PRIVATE_SSH_KEY }}
   #   #     port: 22
   #   #     script: |
-  #   #       docker pull ${{ env.FRONTEND_IMAGE_NAME }}
-  #   #       docker pull ${{ env.BACKEND_IMAGE_NAME }}
+  #   #       docker pull ${{ env.FRONTEND_IMAGE }}
+  #   #       docker pull ${{ env.BACKEND_IMAGE }}
   #
-  #       # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE_NAME }}|g" ~/compose.yaml
-  #       # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE_NAME }}|g" ~/compose.yaml
+  #       # sed -i "s|product-frontend:latest|${{ env.FRONTEND_IMAGE }}|g" ~/compose.yaml
+  #       # sed -i "s|product-backend:latest|${{ env.BACKEND_IMAGE }}|g" ~/compose.yaml
   #
   #   - name: Update new Compose file
   #     uses: "appleboy/ssh-action@v1"
@@ -366,8 +364,8 @@ jobs:
   #
   #           cat .env
   #
-  #           docker pull ${{ env.FRONTEND_IMAGE_NAME_LATEST }}
-  #           docker pull ${{ env.BACKEND_IMAGE_NAME_LATEST }}
+  #           docker pull ${{ env.FRONTEND_IMAGE_LATEST }}
+  #           docker pull ${{ env.BACKEND_IMAGE_LATEST }}
   #
   #           docker compose down
   #           docker compose up -d --remove-orphans
