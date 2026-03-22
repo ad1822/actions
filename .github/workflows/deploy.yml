@@ -18,7 +18,7 @@ concurrency:
 env:
   FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
   BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:${{ github.sha }}
-  FRONTEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE }}:latest
+  FRONTEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.FRONTEND_IMAGE_NAME }}:latest
   BACKEND_IMAGE_LATEST: ${{ secrets.DOCKER_USERNAME }}/${{ vars.BACKEND_IMAGE_NAME }}:latest
 
 jobs:
