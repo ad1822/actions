@@ -146,7 +146,7 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}
             ${{ env.FRONTEND_IMAGE_LATEST }}
           build-args: |
-           - VITE_CLOUDINARY_CLOUD_NAME=${{ vars.VITE_CLOUDINARY_CLOUD_NAME}}
+           - VITE_CLOUDINARY_CLOUD_NAME=${{ vars.VITE_CLOUDINARY_CLOUD_NAME }}
            - VITE_CLOUDINARY_UPLOAD_PRESET=${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
           #   VITE_BASE_URL=${{ github.ref == 'refs/heads/main' && format('http://{0}:{1}', secrets.HOST, secrets.PORT) || 'http://backend:8080' }}
 
