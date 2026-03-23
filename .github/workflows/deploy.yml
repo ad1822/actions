@@ -221,6 +221,19 @@ jobs:
             VITE_CLOUDINARY_UPLOAD_PRESET=${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
           #   VITE_BASE_URL=${{ github.ref == 'refs/heads/main' && format('http://{0}:{1}', secrets.HOST, secrets.PORT) || 'http://backend:8080' }}
 
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.FRONTEND_IMAGE }}
+          docker push ${{ env.FRONTEND_IMAGE_LATEST }}
+
   Backend_Build_Image:
     runs-on: ubuntu-24.04
     needs: [Backend_Build_Test, Backend_Lint]
@@ -238,7 +251,7 @@ jobs:
       - name: Setup buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker build and push
+      - name: Docker build
         uses: docker/build-push-action@v7
         with:
           context: ./backend
@@ -249,6 +262,20 @@ jobs:
             ${{ env.BACKEND_IMAGE }}
             ${{ env.BACKEND_IMAGE_LATEST }}
 
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.BACKEND_IMAGE }}
+          docker push ${{ env.BACKEND_IMAGE_LATEST }}
+         
+  
   Run_Integration_Test:
     runs-on: ubuntu-24.04
     needs: [Frontend_Build_Test, Backend_Build_Image]
