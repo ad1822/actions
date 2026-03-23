@@ -115,7 +115,7 @@ jobs:
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
-    name: "Backedn Build and Test"
+    name: "Backend Build and Test"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -191,7 +191,7 @@ jobs:
 
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
-    needs: Frontend_Build_Test
+    needs: [Frontend_Build_Test, Frontend_Lint]
 
     steps:
       - name: Clone the repo
@@ -223,7 +223,7 @@ jobs:
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
-    needs: Backend_Build_Test
+    needs: [Backend_Build_Test, Backend_Lint]
 
     steps:
       - name: Clone the repo
