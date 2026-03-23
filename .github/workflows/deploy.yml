@@ -27,6 +27,7 @@ jobs:
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
+    name: "Frontend build and test"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -60,7 +61,6 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-
       - name: Install dependencies
         run: npm ci --loglevel verbose
 
@@ -87,8 +87,35 @@ jobs:
       - name: Run unit tests
         run: npm run test || true
 
+  Frontend_Lint:
+    runs-on: ubuntu-24.04
+    name: "Frontend Lint"
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+        
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
+      - name: Setup node action
+        uses: actions/setup-node@v4
+        with:
+          # node-version: ${{ matrix.node }}
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --loglevel verbose
+
+      - name: Run lint test
+        run: npm run lint || true
+
   Backend_Build_Test:
     runs-on: ubuntu-24.04
+    name: "Backedn Build and Test"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -132,6 +159,36 @@ jobs:
       - name: Run unit tests
         run: npm run test || true
 
+
+  Backend_Lint:
+    runs-on: ubuntu-24.04
+    name: "Backedn Lint"
+    # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
+    defaults:
+      run:
+        working-directory: ./backend
+
+    # strategy:
+    #   matrix:
+    #     node: [22,24]
+
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
+      - name: Setup node action
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: ./backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --loglevel verbose
+
+      - name: Run lint test
+        run: npm run lint || true
+
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
@@ -153,7 +210,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
-          push: true
+          push: false
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
           tags: |
@@ -185,7 +242,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./backend
-          push: true
+          push: false
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
           tags: |
@@ -261,8 +318,7 @@ jobs:
     environment: production
     if: ${{ github.ref == 'refs/heads/main' }}
     needs:
-      - Frontend_Build_Image
-      - Backend_Build_Image
+      - Run_Integration_Test
 
     steps:
       - name: Clone the repo
