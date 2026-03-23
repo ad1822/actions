@@ -213,9 +213,7 @@ jobs:
           load: true
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}
-            ${{ env.FRONTEND_IMAGE_LATEST }}
+          tags: ${{ env.FRONTEND_IMAGE }}
           build-args: |
             VITE_CLOUDINARY_CLOUD_NAME=${{ vars.VITE_CLOUDINARY_CLOUD_NAME }}
             VITE_CLOUDINARY_UPLOAD_PRESET=${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
@@ -228,6 +226,10 @@ jobs:
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
+
+      - name: Tag latest
+        run: |
+          docker tag ${{ env.FRONTEND_IMAGE }} ${{ env.FRONTEND_IMAGE_LATEST }}
 
       - name: Push Docker image
         run: |
@@ -258,9 +260,7 @@ jobs:
           load: true
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
-          tags: |
-            ${{ env.BACKEND_IMAGE }}
-            ${{ env.BACKEND_IMAGE_LATEST }}
+          tags: ${{ env.BACKEND_IMAGE }}
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.20.0
@@ -269,6 +269,10 @@ jobs:
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
+
+      - name: Tag latest
+        run: |
+          docker tag ${{ env.BACKEND_IMAGE }} ${{ env.BACKEND_IMAGE_LATEST }}
 
       - name: Push Docker image
         run: |
