@@ -10,8 +10,12 @@ RUN --mount=type=cache,target=/root/.npm \
   npm ci --no-audit --no-fund
 
 ARG VITE_BASE_URL
+ARG VITE_CLOUDINARY_CLOUD_NAME
+ARG VITE_CLOUDINARY_UPLOAD_PRESET
 
 ENV VITE_BASE_URL=$VITE_BASE_URL
+ENV VITE_CLOUDINARY_CLOUD_NAME=$VITE_CLOUDINARY_CLOUD_NAME
+ENV VITE_CLOUDINARY_UPLOAD_PRESET=$VITE_CLOUDINARY_UPLOAD_PRESET
 
 # RUN npm install
 
@@ -27,6 +31,6 @@ EXPOSE 80
 
 # HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "curl localhost:80" ]
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]
 
 # USER nginx

@@ -29,35 +29,41 @@ app.get('/', (req, res) => {
   res.send('API running');
 });
 
+const PORT = process.env.PORT;
+
 app.get('/health', (req, res) => {
   res.send(`backend is working file on ${PORT}`);
 });
 
-const PORT = process.env.PORT;
+// Export app for testing
+export { app };
 
-const server = app.listen(PORT, async () => {
-  try {
-    await initializeDatabase();
-    console.log(`Server running on port ${PORT}`);
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  server.close(async () => {
-    await closePool();
-    process.exit(0);
+// Only start server if this file is run directly
+if (require.main === module) {
+  const server = app.listen(PORT, async () => {
+    try {
+      await initializeDatabase();
+      console.log(`Server running on port ${PORT}`);
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
   });
-});
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  server.close(async () => {
-    await closePool();
-    process.exit(0);
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    server.close(async () => {
+      await closePool();
+      process.exit(0);
+    });
   });
-});
+
+  process.on('SIGINT', async () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    server.close(async () => {
+      await closePool();
+      process.exit(0);
+    });
+  });
+}

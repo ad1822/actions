@@ -306,3 +306,49 @@ input::placeholder {
   font-size: 0.95rem;
   font-weight: 500;
 }
+
+/* Image Upload */
+.image-upload {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.upload-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--ctp-surface1);
+  color: var(--text);
+  border: 1px dashed var(--border);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-button:hover {
+  border-color: var(--accent);
+  background: var(--ctp-surface0);
+}
+
+.upload-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-error {
+  color: var(--ctp-red);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.upload-preview {
+  margin-top: 12px;
+}
+
+.upload-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border: 1px solid var(--border);
+  object-fit: contain;
+}

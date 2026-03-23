@@ -2,8 +2,8 @@ name: "Action"
 
 services:
   backend:
-    image: ${BACKEND_IMAGE}
-    # build: ./backend/
+    # image: ${BACKEND_IMAGE}
+    build: ./backend/
     depends_on:
       database:
         condition: service_healthy
@@ -20,13 +20,16 @@ services:
       - actions
 
   frontend:
-    image: ${FRONTEND_IMAGE}
-    # build:
-    #  context: ./frontend
-     # args:
-     #  - VITE_BASE_URL=${VITE_BASE_URL}
+    # image: ${FRONTEND_IMAGE}
+    build:
+     context: ./frontend
+     args:
+      - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME}
+      - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET}
     depends_on:
     - backend
+    environment:
+     - VITE_BASE_URL=${VITE_BASE_URL}
     ports:
       - "80:80"
     networks:

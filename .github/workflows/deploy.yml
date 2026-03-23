@@ -27,7 +27,7 @@ jobs:
 
   Frontend_Build_Test:
     runs-on: ubuntu-24.04
-    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
+    # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: ./frontend
@@ -70,13 +70,13 @@ jobs:
 
       - name: Run build
         run: npm run build
-      
+
       - name: Run unit tests
         run: npm run test || true
 
   Backend_Build_Test:
     runs-on: ubuntu-24.04
-    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
+    # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: ./backend
@@ -120,7 +120,7 @@ jobs:
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
-    environment: production
+    # environment: production
 
     steps:
       - name: Clone the repo
@@ -146,7 +146,9 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}
             ${{ env.FRONTEND_IMAGE_LATEST }}
           build-args: |
-            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
+           - VITE_CLOUDINARY_CLOUD_NAME=${{ vars.VITE_CLOUDINARY_CLOUD_NAME}}
+           - VITE_CLOUDINARY_UPLOAD_PRESET=${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
+          #   VITE_BASE_URL=${{ github.ref == 'refs/heads/main' && format('http://{0}:{1}', secrets.HOST, secrets.PORT) || 'http://backend:8080' }}
 
   Backend_Build_Image:
     runs-on: ubuntu-24.04
@@ -178,7 +180,7 @@ jobs:
 
   Run_Integration_Test:
     runs-on: ubuntu-22.04
-    needs: [Frontend_Build_Image, Backend_Build_Image]
+    needs: [ Backend_Build_Image]
     if: ${{ github.ref == 'refs/heads/dev' }}
 
     steps:
@@ -215,7 +217,6 @@ jobs:
             curl http://localhost:8080/health && break
             sleep 3
           done
-
 
       - name: Test integration test
         run: |
@@ -269,6 +270,7 @@ jobs:
 
             FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
             BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}
+            VITE_BASE_URL=http://${{ secrets.HOST }}:${{ secrets.PORT }}
 
             EOF
               

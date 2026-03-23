@@ -3,6 +3,7 @@ import { getProducts, createProduct } from "./api"
 import type { Product } from "./types/product"
 import ProductList from "./components/ProductList"
 import AddProduct from "./components/AddProduct"
+import ImageUpload from "./components/ImageUpload"
 import "./App.css"
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
           <div className="layout">
             <div className="sidebar">
               <AddProduct onAdd={addProduct} />
+              <ImageUpload onUploadSuccess={(url) => console.log("Uploaded:", url)} />
             </div>
 
             <div className="content">

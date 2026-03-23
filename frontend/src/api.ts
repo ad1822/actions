@@ -2,11 +2,11 @@ import axios from "axios"
 import type { Product } from "./types/product"
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL
+  // baseURL: import.meta.env.VITE_BASE_URL
+  baseURL: window.__CONFIG__.BASE_URL
 })
 
 export const getProducts = async (): Promise<Product[]> => {
-  console.log(import.meta.env.VITE_BASE_URL)
   const res = await API.get<Product[]>("/products")
   return res.data
 }
