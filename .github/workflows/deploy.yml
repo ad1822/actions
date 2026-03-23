@@ -25,9 +25,9 @@ env:
 
 jobs:
 
-  Frontend_Build_Test:
+  frontend-build-test:
     runs-on: ubuntu-24.04
-    name: "Frontend build and test"
+    name: "Frontend: Build and Test"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -39,10 +39,10 @@ jobs:
 
     steps:
         
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node action
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           # node-version: ${{ matrix.node }}
@@ -50,10 +50,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
-      - name: Security scanning in npm
+      - name: Run npm security audit
         run: npm audit > frontend-audit || true
 
-      - name: Upload audit results
+      - name: Upload security audit report
         uses: actions/upload-artifact@v4
         with:
           name: frontend-audit-${{ github.sha }}
@@ -61,21 +61,21 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --loglevel verbose
 
-      - name: Run lint test
+      - name: Run linter
         run: npm run lint || true
 
       # CI should NOT depend on production URL
-      - name: Create .env file
+      - name: Create environment file
         run: |
           echo "VITE_BASE_URL=http://localhost:8080" > .env
 
-      - name: Run build
+      - name: Build application
         run: npm run build
 
-      - name: Upload build files
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist-${{ github.sha }}
@@ -87,19 +87,19 @@ jobs:
       - name: Run unit tests
         run: npm run test || true
 
-  Frontend_Lint:
+  frontend-lint:
     runs-on: ubuntu-24.04
-    name: "Frontend Lint"
+    name: "Frontend: Lint"
     defaults:
       run:
         working-directory: ./frontend
 
     steps:
         
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node action
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           # node-version: ${{ matrix.node }}
@@ -107,15 +107,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --loglevel verbose
 
-      - name: Run lint test
+      - name: Run linter
         run: npm run lint || true
 
-  Backend_Build_Test:
+  backend-build-test:
     runs-on: ubuntu-24.04
-    name: "Backend Build and Test"
+    name: "Backend: Build and Test"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -126,20 +126,20 @@ jobs:
     #     node: [22,24]
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node action
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
-      - name: Security scanning in npm
+      - name: Run npm security audit
         run: npm audit > backend-audit || true
 
-      - name: Upload audit results
+      - name: Upload security audit report
         uses: actions/upload-artifact@v4
         with:
           name: backend-audit-${{ github.sha }}
@@ -147,22 +147,22 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --loglevel verbose
 
-      - name: Run lint test
+      - name: Run linter
         run: npm run lint || true
 
-      - name: Run build
+      - name: Build application
         run: npm run build
 
       - name: Run unit tests
         run: npm run test || true
 
 
-  Backend_Lint:
+  backend-lint:
     runs-on: ubuntu-24.04
-    name: "Backedn Lint"
+    name: "Backend: Lint"
     # if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' }}
     defaults:
       run:
@@ -173,40 +173,41 @@ jobs:
     #     node: [22,24]
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node action
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --loglevel verbose
 
-      - name: Run lint test
+      - name: Run linter
         run: npm run lint || true
 
-  Frontend_Build_Image:
+  frontend-build-image:
     runs-on: ubuntu-24.04
-    needs: [Frontend_Build_Test, Frontend_Lint]
+    name: "Frontend: Build Docker Image"
+    needs: [frontend-build-test, frontend-lint]
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login docker
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker build
+      - name: Build Docker image
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
@@ -227,7 +228,7 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
 
-      - name: Tag latest
+      - name: Tag image as latest
         run: |
           docker tag ${{ env.FRONTEND_IMAGE }} ${{ env.FRONTEND_IMAGE_LATEST }}
 
@@ -236,24 +237,25 @@ jobs:
           docker push ${{ env.FRONTEND_IMAGE }}
           docker push ${{ env.FRONTEND_IMAGE_LATEST }}
 
-  Backend_Build_Image:
+  backend-build-image:
     runs-on: ubuntu-24.04
-    needs: [Backend_Build_Test, Backend_Lint]
+    name: "Backend: Build Docker Image"
+    needs: [backend-build-test, backend-lint]
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login docker
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker build
+      - name: Build Docker image
         uses: docker/build-push-action@v7
         with:
           context: ./backend
@@ -270,7 +272,7 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
 
-      - name: Tag latest
+      - name: Tag image as latest
         run: |
           docker tag ${{ env.BACKEND_IMAGE }} ${{ env.BACKEND_IMAGE_LATEST }}
 
@@ -280,16 +282,17 @@ jobs:
           docker push ${{ env.BACKEND_IMAGE_LATEST }}
          
   
-  Run_Integration_Test:
+  integration-test:
     runs-on: ubuntu-24.04
-    needs: [Frontend_Build_Test, Backend_Build_Image]
+    name: "Integration Test"
+    needs: [frontend-build-test, backend-build-image]
     if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate a .env file
+      - name: Generate environment file
         run: |
           cat <<EOF > .env
           PORT=8080
@@ -302,18 +305,18 @@ jobs:
           HOST=localhost
           EOF
 
-      - name: Pull the latest image for backend
+      - name: Pull backend Docker image
         run: |
           # docker pull ${{ env.FRONTEND_IMAGE }}
           docker pull ${{ env.BACKEND_IMAGE }}
 
-      - name: Start a docker compose
+      - name: Start Docker Compose services
         run: docker compose up -d
         env:
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
 
-      - name: Wait for backend to start
+      - name: Wait for backend health check
         run: |
           for i in {1..20}; do
             if curl -f http://localhost:8080/health; then
@@ -327,13 +330,13 @@ jobs:
           docker logs $(docker ps -q)
           exit 1
 
-      - name: Download build files
+      - name: Download frontend build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist-${{ github.sha }}
           path: ./frontend/dist
 
-      - name: Test integration test
+      - name: Run integration tests
         run: |
           cd frontend
           npm ci 
@@ -341,21 +344,22 @@ jobs:
         env:
           VITE_BASE_URL: http://localhost:8080   
 
-      - name: Docker cleanup
+      - name: Cleanup Docker Compose services
         run: docker compose down
 
-  Deploy:
+  deploy:
     runs-on: ubuntu-24.04
+    name: "Deploy to Production"
     environment: production
     if: ${{ github.ref == 'refs/heads/main' }}
     needs:
-      - Run_Integration_Test
+      - integration-test
 
     steps:
-      - name: Clone the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy compose file into EC2
+      - name: Copy Docker Compose file to EC2
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.HOST }}
@@ -365,7 +369,7 @@ jobs:
           source: 'compose.yaml'
           target: '/home/ubuntu'
 
-      - name: Update new Compose file
+      - name: Deploy application via SSH
         uses: "appleboy/ssh-action@v1"
         with:
           host: ${{ secrets.HOST }}
@@ -395,12 +399,16 @@ jobs:
               docker compose --env-file .env down
               docker compose --env-file .env up -d --remove-orphans
 
-  Smoke_Testing:
+  smoke-test:
     runs-on: ubuntu-24.04
+    name: "Smoke Test"
     environment: production
-    needs: Deploy
+    needs: deploy
 
     steps:
-      - run: ping ${{ secrets.HOST }} -c 10 || true
-      - run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
-      - run: curl http://${{ secrets.HOST }}
+      - name: Ping production host
+        run: ping ${{ secrets.HOST }} -c 10 || true
+      - name: Verify application on port
+        run: curl http://${{ secrets.HOST }}:${{ secrets.PORT }}
+      - name: Verify application on default port
+        run: curl http://${{ secrets.HOST }}
