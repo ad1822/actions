@@ -285,7 +285,7 @@ jobs:
   integration-test:
     runs-on: ubuntu-24.04
     name: "Integration Test"
-    needs: [frontend-build-test, backend-build-image]
+    needs: [frontend-build-image, backend-build-image]
     if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
 
     steps:
