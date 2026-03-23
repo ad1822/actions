@@ -32,9 +32,9 @@ jobs:
       run:
         working-directory: ./frontend
 
-    strategy:
-      matrix:
-        node: [22,24]
+    # strategy:
+    #   matrix:
+    #     node: [22,24]
 
     steps:
         
@@ -44,7 +44,8 @@ jobs:
       - name: Setup node action
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          # node-version: ${{ matrix.node }}
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
@@ -52,10 +53,13 @@ jobs:
         run: npm audit > frontend-audit || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
+          name: frontend-audit-${{ github.sha }}
           path: ./frontend/frontend-audit
-          name: frontend-audit-${{ matrix.node }}-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+
 
       - name: Install dependencies
         run: npm ci --loglevel verbose
@@ -71,6 +75,15 @@ jobs:
       - name: Run build
         run: npm run build
 
+      - name: Upload build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: ./frontend/dist
+          retention-days: 5
+          if-no-files-found: error
+          compression-level: 6
+
       - name: Run unit tests
         run: npm run test || true
 
@@ -81,9 +94,9 @@ jobs:
       run:
         working-directory: ./backend
 
-    strategy:
-      matrix:
-        node: [22,24]
+    # strategy:
+    #   matrix:
+    #     node: [22,24]
 
     steps:
       - name: Clone the repo
@@ -92,7 +105,7 @@ jobs:
       - name: Setup node action
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
 
@@ -100,10 +113,12 @@ jobs:
         run: npm audit > backend-audit || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
+          name: backend-audit-${{ github.sha }}
           path: ./backend/backend-audit
-          name: backend-audit-${{ matrix.node }}-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Install dependencies
         run: npm ci --loglevel verbose
@@ -120,7 +135,6 @@ jobs:
   Frontend_Build_Image:
     runs-on: ubuntu-24.04
     needs: Frontend_Build_Test
-    # environment: production
 
     steps:
       - name: Clone the repo
@@ -179,9 +193,9 @@ jobs:
             ${{ env.BACKEND_IMAGE_LATEST }}
 
   Run_Integration_Test:
-    runs-on: ubuntu-22.04
-    needs: [ Backend_Build_Image]
-    if: ${{ github.ref == 'refs/heads/dev' }}
+    runs-on: ubuntu-24.04
+    needs: [Frontend_Build_Test, Backend_Build_Image]
+    if: ${{ github.ref == 'refs/heads/dev' || github.event_name == 'pull_request' }}
 
     steps:
       - name: Clone the repo
@@ -214,9 +228,22 @@ jobs:
       - name: Wait for backend to start
         run: |
           for i in {1..20}; do
-            curl http://localhost:8080/health && break
+            if curl -f http://localhost:8080/health; then
+              echo "Backend is up"
+              exit 0
+            fi
             sleep 3
           done
+          
+          echo "Backend failed to start"
+          docker logs $(docker ps -q)
+          exit 1
+
+      - name: Download build files
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: ./frontend/dist
 
       - name: Test integration test
         run: |
