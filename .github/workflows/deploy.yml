@@ -252,7 +252,7 @@ jobs:
   Run_Integration_Test:
     runs-on: ubuntu-24.04
     needs: [Frontend_Build_Test, Backend_Build_Image]
-    if: ${{ github.ref == 'refs/heads/dev' || github.event_name == 'pull_request' }}
+    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
 
     steps:
       - name: Clone the repo
